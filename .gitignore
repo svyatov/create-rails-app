@@ -9,3 +9,9 @@
 
 # rspec failure tracking
 .rspec_status
+
+# rubocop cache
+/.rubocop_cache/
+
+# built gems
+*.gem
