@@ -3,7 +3,4 @@
 
 require 'create_rails_app'
 
-puts "create-rails-app v#{CreateRailsApp::VERSION}"
-puts
-puts 'Interactive CLI wizard for `rails new` — coming soon!'
-puts 'https://github.com/svyatov/create-rails-app'
+exit CreateRailsApp::CLI.start(ARGV)

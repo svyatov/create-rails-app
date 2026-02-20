@@ -1,0 +1,66 @@
+# frozen_string_literal: true
+
+require 'spec_helper'
+
+RSpec.describe CreateRailsApp::Compatibility::Matrix do
+  describe '.for' do
+    it 'returns a match for Rails 8.1' do
+      entry = described_class.for('8.1.0')
+      expect(entry.supports_option?(:kamal)).to be(true)
+      expect(entry.supports_option?(:solid)).to be(true)
+      expect(entry.supports_option?(:devcontainer)).to be(true)
+    end
+
+    it 'returns a match for Rails 8.0' do
+      entry = described_class.for('8.0.1')
+      expect(entry.supports_option?(:kamal)).to be(true)
+      expect(entry.supports_option?(:brakeman)).to be(true)
+      expect(entry.supports_option?(:ci)).to be(true)
+    end
+
+    it 'returns a match for Rails 7.2 without 8.0+ options' do
+      entry = described_class.for('7.2.3')
+      expect(entry.supports_option?(:database)).to be(true)
+      expect(entry.supports_option?(:hotwire)).to be(true)
+      expect(entry.supports_option?(:kamal)).to be(false)
+      expect(entry.supports_option?(:brakeman)).to be(false)
+      expect(entry.supports_option?(:ci)).to be(false)
+      expect(entry.supports_option?(:solid)).to be(false)
+      expect(entry.supports_option?(:devcontainer)).to be(false)
+      expect(entry.supports_option?(:thruster)).to be(false)
+    end
+
+    it 'raises for unsupported versions' do
+      expect { described_class.for('6.1.0') }
+        .to raise_error(CreateRailsApp::UnsupportedRailsVersionError, /Supported ranges:/)
+    end
+
+    it 'raises for version below minimum' do
+      expect { described_class.for('7.1.0') }
+        .to raise_error(CreateRailsApp::UnsupportedRailsVersionError)
+    end
+  end
+
+  describe '.supported_ranges' do
+    it 'returns an array of range strings' do
+      ranges = described_class.supported_ranges
+      expect(ranges).to be_an(Array)
+      expect(ranges.length).to eq(described_class::TABLE.length)
+    end
+  end
+
+  describe CreateRailsApp::Compatibility::Matrix::Entry do
+    it 'returns nil for skip allowed_values' do
+      entry = described_class.new(
+        requirement: Gem::Requirement.new('>= 0'),
+        supported_options: { hotwire: nil }
+      )
+      expect(entry.allowed_values(:hotwire)).to be_nil
+    end
+
+    it 'returns enum values for database' do
+      entry = CreateRailsApp::Compatibility::Matrix.for('8.0.0')
+      expect(entry.allowed_values(:database)).to include('postgresql', 'mysql')
+    end
+  end
+end
