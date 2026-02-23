@@ -34,6 +34,22 @@ RSpec.describe CreateRailsApp::UI::Palette do
     expect(palette.color(:arg_value, '8.1.0')).to include('8.1.0')
   end
 
+  it 'returns plain text when NO_COLOR is set' do
+    palette = described_class.new(env: { 'TERM' => 'xterm-256color', 'COLORTERM' => '', 'NO_COLOR' => '1' })
+    result = palette.color(:summary_label, 'hello')
+
+    expect(result).to eq('hello')
+    expect(result).not_to include("\e[")
+  end
+
+  it 'returns plain text with NO_COLOR on basic terminal' do
+    palette = described_class.new(env: { 'TERM' => 'xterm', 'COLORTERM' => '', 'NO_COLOR' => '' })
+    result = palette.color(:arg_name, 'flag')
+
+    expect(result).to eq('flag')
+    expect(result).not_to include('{{')
+  end
+
   it 'raises KeyError for unknown role on 256-color terminal' do
     palette = described_class.new(env: { 'TERM' => 'xterm-256color', 'COLORTERM' => '' })
 

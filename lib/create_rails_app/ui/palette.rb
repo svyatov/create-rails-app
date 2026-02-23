@@ -55,7 +55,10 @@ module CreateRailsApp
       # @param text [String] the text to colorize
       # @return [String]
       def color(role, text)
-        if supports_256_colors?
+        if no_color?
+          ROLE_COLORS_256.fetch(role)
+          text
+        elsif supports_256_colors?
           "\e[38;5;#{ROLE_COLORS_256.fetch(role)}m#{text}#{RESET}"
         else
           "{{#{ROLE_COLORS_BASIC.fetch(role)}:#{text}}}"
@@ -65,7 +68,14 @@ module CreateRailsApp
       private
 
       # @return [Boolean]
+      def no_color?
+        @env.key?('NO_COLOR')
+      end
+
+      # @return [Boolean]
       def supports_256_colors?
+        return false if no_color?
+
         term = @env.fetch('TERM', '')
         colorterm = @env.fetch('COLORTERM', '')
         term.include?('256color') || colorterm.match?(/truecolor|24bit|256/i)

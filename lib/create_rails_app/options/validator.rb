@@ -72,10 +72,8 @@ module CreateRailsApp
       def validate_value!(key, value)
         definition = Catalog.fetch(key)
         case definition[:type]
-        when :skip
+        when :skip, :flag
           return if value.nil? || value == true || value == false
-        when :flag
-          return if value.nil? || value == true
         when :enum
           return if value.nil? || value == false || definition[:values].include?(value)
         end

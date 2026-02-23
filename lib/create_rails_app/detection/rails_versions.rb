@@ -31,7 +31,10 @@ module CreateRailsApp
         output = IO.popen([@gem_command, 'list', 'rails', '--local', '--exact'], err: %i[child out], &:read)
         return [] if $CHILD_STATUS && !$CHILD_STATUS.success?
 
-        versions = output.scan(VERSION_PATTERN).map { |v| Gem::Version.new(v) }
+        rails_line = output.lines.find { |line| line.match?(/\Arails\s/) }
+        return [] unless rails_line
+
+        versions = rails_line.scan(VERSION_PATTERN).map { |v| Gem::Version.new(v) }
         versions.sort.reverse
       rescue SystemCallError
         []

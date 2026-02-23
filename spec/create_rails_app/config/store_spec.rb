@@ -50,6 +50,13 @@ RSpec.describe CreateRailsApp::Config::Store do
     expect { store.delete_preset('missing') }.not_to raise_error
   end
 
+  it 'handles nil last_used from YAML without crashing' do
+    File.write(config_path, YAML.dump('version' => 1, 'last_used' => nil, 'presets' => nil))
+
+    expect(store.last_used).to eq({})
+    expect(store.preset_names).to eq([])
+  end
+
   it 'raises ConfigError on corrupt YAML' do
     File.write(config_path, "---\n\t\tinvalid: yaml: broken")
     expect { store.last_used }.to raise_error(CreateRailsApp::ConfigError, /Invalid config file/)

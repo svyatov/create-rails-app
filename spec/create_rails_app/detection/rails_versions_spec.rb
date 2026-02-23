@@ -54,6 +54,18 @@ RSpec.describe CreateRailsApp::Detection::RailsVersions do
     expect(detector.detect).to eq({})
   end
 
+  it 'only matches rails gem line, not railties or other gems' do
+    detector = described_class.new
+    allow(IO).to receive(:popen).and_return(
+      "railties (8.1.2, 8.0.7)\nrails (8.0.5)\nrails-html-sanitizer (1.6.0)\n"
+    )
+
+    result = detector.detect
+
+    expect(result['8.0']).to eq('8.0.5')
+    expect(result).not_to have_key('8.1')
+  end
+
   it 'returns empty hash on non-zero exit from gem list' do
     detector = described_class.new
     allow(IO).to receive(:popen) do |*_args, **_kwargs, &_block|

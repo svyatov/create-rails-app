@@ -133,10 +133,16 @@ module CreateRailsApp
       )
 
       @runner.run!(command, dry_run: @options[:dry_run])
-      @store.save_last_used(selected_options)
-      save_preset_if_requested(selected_options)
+      unless @options[:dry_run]
+        @store.save_last_used(selected_options)
+        begin
+          save_preset_if_requested(selected_options)
+        rescue ValidationError => e
+          @err.puts("Warning: #{e.message}")
+        end
+      end
       0
-    rescue OptionParser::ParseError, Error => e
+    rescue OptionParser::ParseError, ArgumentError, Error => e
       @err.puts(e.message)
       1
     rescue Interrupt
@@ -180,6 +186,10 @@ module CreateRailsApp
 
       if @options[:delete_preset] && conflicting_create_action
         raise ValidationError, '--delete-preset cannot be combined with create actions'
+      end
+
+      if @options[:dry_run] && (@options[:delete_preset] || query_action)
+        raise ValidationError, '--dry-run cannot be combined with query or delete actions'
       end
 
       if @options[:doctor] && (query_action || @options[:delete_preset] || conflicting_create_action)
@@ -294,7 +304,9 @@ module CreateRailsApp
     def build_version_choices(installed_rails)
       Compatibility::Matrix::SUPPORTED_SERIES.reverse_each.map do |series|
         version = installed_rails[series]
-        { label: "Rails #{series}", version: version, series: series, installed: !version.nil? }
+        label = "Rails #{series}"
+        label += ' (not installed)' unless version
+        { label: label, version: version, series: series, installed: !version.nil? }
       end
     end
 
@@ -401,7 +413,9 @@ module CreateRailsApp
     # @param version_choice [VersionChoice]
     # @return [void]
     def show_summary(app_name:, command:, runtime_versions:, version_choice:)
-      new_idx = command.index('new')
+      new_idx = if command[1] == 'new' then 1
+                elsif command[2] == 'new' then 2
+                end
       return unless new_idx
 
       args = command[(new_idx + 2)..] || []

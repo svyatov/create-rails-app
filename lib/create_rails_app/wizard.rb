@@ -132,6 +132,7 @@ module CreateRailsApp
       @compatibility_entry = compatibility_entry
       @prompter = prompter
       @values = sanitize_defaults(defaults)
+      @stashed = {}
     end
 
     # Runs the wizard and returns the selected options.
@@ -144,10 +145,12 @@ module CreateRailsApp
         key = keys[index]
 
         if skip_step?(key)
-          @values.delete(key)
+          @stashed[key] = @values.delete(key) if @values.key?(key)
           index += 1
           next
         end
+
+        @values[key] = @stashed.delete(key) if @stashed.key?(key) && !@values.key?(key)
 
         answer = ask_for(key, index:, total: keys.length)
         case answer

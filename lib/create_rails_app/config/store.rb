@@ -83,8 +83,8 @@ module CreateRailsApp
         raw = load
         {
           'version' => raw.fetch('version', SCHEMA_VERSION),
-          'last_used' => raw.fetch('last_used', {}),
-          'presets' => raw.fetch('presets', {})
+          'last_used' => raw.fetch('last_used', nil) || {},
+          'presets' => raw.fetch('presets', nil) || {}
         }
       end
 

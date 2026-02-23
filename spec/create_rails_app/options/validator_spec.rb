@@ -73,6 +73,12 @@ RSpec.describe CreateRailsApp::Options::Validator do
     end.to raise_error(CreateRailsApp::ValidationError, /Invalid value/)
   end
 
+  it 'accepts false for flag type' do
+    expect(
+      validator.validate!(app_name: 'myapp', options: { api: false })
+    ).to be(true)
+  end
+
   it 'rejects enum value that passes type check but fails compatibility check' do
     # Create an entry that supports database but only allows sqlite3
     restricted_entry = CreateRailsApp::Compatibility::Matrix::Entry.new(

@@ -364,6 +364,37 @@ RSpec.describe CreateRailsApp::Wizard do
     expect(result).not_to have_key(:hotwire)
   end
 
+  it 'preserves database choice after toggling active_record back to true' do
+    entry = CreateRailsApp::Compatibility::Matrix::Entry.new(
+      requirement: Gem::Requirement.new('>= 0'),
+      supported_options: {
+        active_record: nil,
+        database: %w[sqlite3 postgresql mysql trilogy]
+      }
+    )
+    prompter = WizardFakePrompter.new(
+      choices: [
+        'include',                            # active_record = true
+        'postgresql',                         # database = postgresql
+        CreateRailsApp::Wizard::BACK,         # back to database
+        CreateRailsApp::Wizard::BACK,         # back to active_record
+        'skip',                               # active_record = false (database auto-skipped, stashed)
+        CreateRailsApp::Wizard::BACK,         # back to active_record
+        'include'                             # active_record = true (database restored from stash)
+        # database prompt should default to postgresql (restored)
+      ]
+    )
+
+    result = described_class.new(
+      compatibility_entry: entry,
+      defaults: {},
+      prompter: prompter
+    ).run
+
+    expect(result[:active_record]).to be(true)
+    expect(result[:database]).to eq('postgresql')
+  end
+
   it 'back-navigates past auto-skipped steps' do
     entry = CreateRailsApp::Compatibility::Matrix::Entry.new(
       requirement: Gem::Requirement.new('>= 0'),
