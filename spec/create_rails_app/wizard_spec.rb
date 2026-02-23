@@ -329,6 +329,41 @@ RSpec.describe CreateRailsApp::Wizard do
     expect(pg_option).not_to include('(default)')
   end
 
+  it 'clears stale downstream values when back-navigation changes a parent option' do
+    entry = CreateRailsApp::Compatibility::Matrix::Entry.new(
+      requirement: Gem::Requirement.new('>= 0'),
+      supported_options: {
+        api: nil,
+        javascript: %w[importmap bun],
+        css: %w[tailwind bootstrap],
+        hotwire: nil
+      }
+    )
+    prompter = WizardFakePrompter.new(
+      choices: [
+        'no',                                   # api = no (index 0→1)
+        'importmap',                            # javascript = importmap (index 1→2)
+        'tailwind',                             # css = tailwind (index 2→3)
+        CreateRailsApp::Wizard::BACK,           # back from hotwire → css (index 3→2)
+        CreateRailsApp::Wizard::BACK,           # back from css → javascript (index 2→1)
+        CreateRailsApp::Wizard::BACK,           # back from javascript → api (index 1→0)
+        'yes' # api = yes (index 0→1, skips rest)
+      ]
+    )
+
+    result = described_class.new(
+      compatibility_entry: entry,
+      defaults: {},
+      prompter: prompter
+    ).run
+
+    expect(result[:api]).to be(true)
+    # javascript, css, hotwire should be cleared — not stale from previous pass
+    expect(result).not_to have_key(:javascript)
+    expect(result).not_to have_key(:css)
+    expect(result).not_to have_key(:hotwire)
+  end
+
   it 'back-navigates past auto-skipped steps' do
     entry = CreateRailsApp::Compatibility::Matrix::Entry.new(
       requirement: Gem::Requirement.new('>= 0'),

@@ -30,8 +30,8 @@ RSpec.describe CreateRailsApp::UI::Palette do
     palette = described_class.new(env: { 'TERM' => 'xterm-256color', 'COLORTERM' => '' })
 
     expect(palette.color(:command_app, 'myapp')).to include('myapp')
-    expect(palette.color(:version_installed, '8.1.0')).to include('8.1.0')
-    expect(palette.color(:version_missing, '7.2')).to include('7.2')
+    expect(palette.color(:install_cmd, 'gem install rails')).to include('gem install rails')
+    expect(palette.color(:arg_value, '8.1.0')).to include('8.1.0')
   end
 
   it 'raises KeyError for unknown role on 256-color terminal' do

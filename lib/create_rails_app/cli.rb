@@ -84,16 +84,19 @@ module CreateRailsApp
       validate_top_level_flags!
 
       return print_version if @options[:version]
+      return print_help if @options[:help]
       return doctor if @options[:doctor]
       return list_presets if @options[:list_presets]
       return show_preset if @options[:show_preset]
       return delete_preset if @options[:delete_preset]
 
+      validate_preset_name!(@options[:save_preset]) if @options[:save_preset]
+
       runtime_versions = @detector.detect!
       installed_rails = @rails_detector.detect
       version_choice = resolve_rails_version!(installed_rails)
       compatibility_entry = Compatibility::Matrix.for(version_choice.version || "#{version_choice.series}.0")
-      builder = CommandBuilder.new(compatibility_entry: compatibility_entry)
+      builder = CommandBuilder.new
       last_used = symbolize_keys(@store.last_used)
 
       app_name = resolve_app_name!
@@ -147,18 +150,23 @@ module CreateRailsApp
 
     # @return [void]
     def parse_options!
-      OptionParser.new do |parser|
-        parser.on('--preset NAME') { |value| @options[:preset] = value }
-        parser.on('--save-preset NAME') { |value| @options[:save_preset] = value }
-        parser.on('--list-presets') { @options[:list_presets] = true }
-        parser.on('--show-preset NAME') { |value| @options[:show_preset] = value }
-        parser.on('--delete-preset NAME') { |value| @options[:delete_preset] = value }
-        parser.on('--doctor') { @options[:doctor] = true }
-        parser.on('--version') { @options[:version] = true }
-        parser.on('--dry-run') { @options[:dry_run] = true }
-        parser.on('--rails-version VERSION') { |value| @options[:rails_version] = value }
-        parser.on('--minimal') { @options[:minimal] = true }
-      end.parse!(@argv)
+      @option_parser = OptionParser.new do |parser|
+        parser.banner = 'Usage: create-rails-app [APP_NAME] [options]'
+        parser.on('-h', '--help', 'Show this help message') { @options[:help] = true }
+        parser.on('--preset NAME', 'Use a saved preset') { |value| @options[:preset] = value }
+        parser.on('--save-preset NAME', 'Save selected options as a preset') { |value| @options[:save_preset] = value }
+        parser.on('--list-presets', 'List saved presets') { @options[:list_presets] = true }
+        parser.on('--show-preset NAME', 'Show preset details') { |value| @options[:show_preset] = value }
+        parser.on('--delete-preset NAME', 'Delete a preset') { |value| @options[:delete_preset] = value }
+        parser.on('--doctor', 'Print runtime and version info') { @options[:doctor] = true }
+        parser.on('--version', 'Print version') { @options[:version] = true }
+        parser.on('--dry-run', 'Print the command without executing') { @options[:dry_run] = true }
+        parser.on('--rails-version VERSION', 'Use a specific Rails version') do |value|
+          @options[:rails_version] = value
+        end
+        parser.on('--minimal', 'Pass --minimal to rails new') { @options[:minimal] = true }
+      end
+      @option_parser.parse!(@argv)
     end
 
     # @raise [ValidationError] if conflicting flags are combined
@@ -189,6 +197,12 @@ module CreateRailsApp
     # @return [Integer] exit code
     def print_version
       @out.puts(VERSION)
+      0
+    end
+
+    # @return [Integer] exit code
+    def print_help
+      @out.puts(@option_parser)
       0
     end
 
@@ -460,9 +474,8 @@ module CreateRailsApp
     # @return [void]
     def save_preset_with_overwrite_check(name, options)
       validate_preset_name!(name)
-      if @store.preset(name)
-        return unless prompter.confirm("Preset '#{name}' already exists. Overwrite?", default: false)
-      end
+      return if @store.preset(name) && !prompter.confirm("Preset '#{name}' already exists. Overwrite?", default: false)
+
       @store.save_preset(name, options)
     end
 

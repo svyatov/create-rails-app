@@ -74,6 +74,26 @@ RSpec.describe CreateRailsApp::CLI do
     expect(out.string.strip).to eq(CreateRailsApp::VERSION)
   end
 
+  it 'prints help with --help' do
+    out = StringIO.new
+
+    status = described_class.start(
+      ['--help'],
+      out: out,
+      err: StringIO.new,
+      store: instance_double(CreateRailsApp::Config::Store),
+      detector: detector,
+      rails_detector: rails_detector,
+      runner: instance_double(CreateRailsApp::Runner),
+      prompter: CLIFakePrompter.new
+    )
+
+    expect(status).to eq(0)
+    expect(out.string).to include('Usage: create-rails-app')
+    expect(out.string).to include('--help')
+    expect(out.string).to include('--preset')
+  end
+
   it 'runs doctor and prints info' do
     out = StringIO.new
 
@@ -660,24 +680,22 @@ RSpec.describe CreateRailsApp::CLI do
     expect(status).to eq(0)
   end
 
-  it 'rejects invalid preset name' do
-    store = instance_double(CreateRailsApp::Config::Store, last_used: {})
-    allow(store).to receive(:save_last_used)
+  it 'rejects invalid --save-preset name before running command' do
+    store = instance_double(CreateRailsApp::Config::Store)
     runner = instance_double(CreateRailsApp::Runner)
-    allow(runner).to receive(:run!)
+    expect(runner).not_to receive(:run!)
 
     err = StringIO.new
-    prompter = CLIFakePrompter.new(choices: ['create'], confirms: [false])
 
     status = described_class.start(
-      ['myapp', '--dry-run', '--rails-version', '8.1.0', '--save-preset', ''],
+      ['myapp', '--dry-run', '--rails-version', '8.1.0', '--save-preset', '!!!'],
       out: StringIO.new,
       err: err,
       store: store,
       detector: detector,
       rails_detector: rails_detector,
       runner: runner,
-      prompter: prompter
+      prompter: CLIFakePrompter.new
     )
 
     expect(status).to eq(1)

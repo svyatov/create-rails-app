@@ -24,9 +24,7 @@ module CreateRailsApp
         arg_name: 117,
         arg_eq: 250,
         arg_value: 214,
-        install_cmd: 178,
-        version_installed: 82,
-        version_missing: 214
+        install_cmd: 178
       }.freeze
 
       # Role-to-color mappings for basic (8/16-color) terminals.
@@ -43,9 +41,7 @@ module CreateRailsApp
         arg_name: 'blue',
         arg_eq: 'white',
         arg_value: 'yellow',
-        install_cmd: 'yellow',
-        version_installed: 'green',
-        version_missing: 'yellow'
+        install_cmd: 'yellow'
       }.freeze
 
       # @param env [Hash] environment variables (defaults to +ENV+)

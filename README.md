@@ -1,6 +1,6 @@
 # create-rails-app
 
-Interactive CLI wizard for `rails new` — work in progress.
+Interactive CLI wizard for `rails new`.
 
 Will walk you through every option, save presets, and remember your choices. No more `rails new` flags look-ups!
 

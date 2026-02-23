@@ -3,9 +3,7 @@
 require 'spec_helper'
 
 RSpec.describe CreateRailsApp::CommandBuilder do
-  subject(:builder) do
-    described_class.new(compatibility_entry: CreateRailsApp::Compatibility::Matrix.for('8.1.0'))
-  end
+  subject(:builder) { described_class.new }
 
   it 'builds a rails new command with version pinning' do
     command = builder.build(

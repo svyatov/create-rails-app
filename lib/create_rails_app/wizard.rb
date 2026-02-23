@@ -144,6 +144,7 @@ module CreateRailsApp
         key = keys[index]
 
         if skip_step?(key)
+          @values.delete(key)
           index += 1
           next
         end
