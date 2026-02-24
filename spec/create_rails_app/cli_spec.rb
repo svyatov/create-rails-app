@@ -273,6 +273,26 @@ RSpec.describe CreateRailsApp::CLI do
     expect(version_options).to eq(['Rails 8.1', 'Rails 8.0 (not installed)', 'Rails 7.2 (not installed)'])
   end
 
+  it 'shows version pin in summary when using older rails version' do
+    allow(rails_detector).to receive(:detect).and_return({ '8.1' => '8.1.2' })
+
+    store = instance_double(CreateRailsApp::Config::Store, last_used: {})
+    allow(store).to receive(:save_last_used)
+    allow(store).to receive(:save_preset)
+    runner = instance_double(CreateRailsApp::Runner)
+    allow(runner).to receive(:run!)
+
+    prompter = FakePrompter.new(choices: ['create'], confirms: [false])
+
+    run_cli(
+      ['myapp', '--dry-run', '--rails-version', '7.2.0'],
+      store: store, runner: runner, prompter: prompter
+    )
+
+    command_msg = prompter.messages.find { |m| m.include?('rails') && m.include?('new') && m.include?('myapp') }
+    expect(command_msg).to include('_7.2.0_')
+  end
+
   it 'shows install line in summary when rails needs installation' do
     allow(rails_detector).to receive(:detect).and_return({ '8.1' => '8.1.2' })
 
