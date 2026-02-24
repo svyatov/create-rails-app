@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'open3'
+require 'timeout'
 
 module CreateRailsApp
   module Detection
@@ -30,7 +31,9 @@ module CreateRailsApp
 
       # @return [Array<Gem::Version>] all installed Rails versions, sorted descending
       def installed_versions
-        output, status = Open3.capture2e(@gem_command, 'list', 'rails', '--local', '--exact')
+        output, status = Timeout.timeout(10) do
+          Open3.capture2e(@gem_command, 'list', 'rails', '--local', '--exact')
+        end
         return [] unless status.success?
 
         rails_line = output.lines.find { |line| line.match?(/\Arails\s/) }
@@ -38,7 +41,7 @@ module CreateRailsApp
 
         versions = rails_line.scan(VERSION_PATTERN).map { |v| Gem::Version.new(v) }
         versions.sort.reverse
-      rescue SystemCallError
+      rescue SystemCallError, Timeout::Error
         []
       end
 

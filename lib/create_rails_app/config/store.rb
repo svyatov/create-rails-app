@@ -127,6 +127,8 @@ module CreateRailsApp
       def default_path
         config_home = ENV.fetch('XDG_CONFIG_HOME', File.join(Dir.home, '.config'))
         File.join(config_home, 'create-rails-app', 'config.yml')
+      rescue ArgumentError
+        raise ConfigError, 'Cannot determine home directory. Set HOME or XDG_CONFIG_HOME.'
       end
 
       # @param hash [Hash{Symbol => Object}]

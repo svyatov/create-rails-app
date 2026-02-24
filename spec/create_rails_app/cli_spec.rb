@@ -755,7 +755,7 @@ RSpec.describe CreateRailsApp::CLI do
     )
 
     expect(status).to eq(1)
-    expect(err.string).not_to be_empty
+    expect(err.string).to include('Malformed version number string')
   end
 
   it 'does not save last_used on dry-run' do

@@ -140,7 +140,7 @@ module CreateRailsApp
         rescue ValidationError, ConfigError => e
           @err.puts("Warning: #{e.message}")
         rescue Interrupt
-          # user skipped the preset prompt after a successful run — that's fine
+          @err.puts('Skipped preset save.')
         end
       end
       0
@@ -293,6 +293,7 @@ module CreateRailsApp
         default: choices.first[:label]
       )
       selected = choices.find { |c| c[:label] == answer }
+      raise ValidationError, "Unknown version selection: #{answer}" unless selected
 
       VersionChoice.new(
         version: selected[:version],

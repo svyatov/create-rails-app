@@ -34,7 +34,11 @@ module CreateRailsApp
       status = @system_runner.call(*command)
       return true if status.respond_to?(:success?) && status.success?
 
-      raise Error, "Command failed: #{command.shelljoin}"
+      code = status.respond_to?(:exitstatus) ? status.exitstatus : nil
+      message = 'Command failed'
+      message += " (exit #{code})" if code
+      message += ": #{command.shelljoin}"
+      raise Error, message
     end
   end
 end
