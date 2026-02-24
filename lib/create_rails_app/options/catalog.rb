@@ -32,7 +32,7 @@ module CreateRailsApp
                     values: (BASE_DATABASE_VALUES + MARIADB_DATABASE_VALUES).freeze }.freeze,
         javascript: { type: :enum, flag: '--javascript', none: '--skip-javascript',
                       values: %w[importmap bun webpack esbuild rollup].freeze }.freeze,
-        css: { type: :enum, flag: '--css', none: '--skip-css',
+        css: { type: :enum, flag: '--css', none: true,
                values: %w[tailwind bootstrap bulma postcss sass].freeze,
                rails_default: 'none' }.freeze,
         asset_pipeline: { type: :enum, flag: '--asset-pipeline', none: '--skip-asset-pipeline',

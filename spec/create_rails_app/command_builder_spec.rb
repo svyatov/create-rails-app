@@ -55,13 +55,22 @@ RSpec.describe CreateRailsApp::CommandBuilder do
     expect(command).to include('--javascript=importmap', '--css=tailwind')
   end
 
-  it 'emits enum skip flag when false' do
+  it 'emits enum skip flag when false and none is a flag string' do
     command = builder.build(
       app_name: 'myapp',
       rails_version: '8.1.0',
-      options: { javascript: false, css: false }
+      options: { javascript: false }
     )
-    expect(command).to include('--skip-javascript', '--skip-css')
+    expect(command).to include('--skip-javascript')
+  end
+
+  it 'emits nothing for enum false when none is boolean true (no skip flag exists)' do
+    command = builder.build(
+      app_name: 'myapp',
+      rails_version: '8.1.0',
+      options: { css: false }
+    )
+    expect(command).to eq(%w[rails _8.1.0_ new myapp])
   end
 
   it 'emits --api for flag type' do

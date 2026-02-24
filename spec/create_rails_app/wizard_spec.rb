@@ -262,16 +262,17 @@ RSpec.describe CreateRailsApp::Wizard do
   end
 
   it 'preserves database choice after toggling active_record back to true' do
-    entry = build_entry(active_record: nil, database: %w[sqlite3 postgresql mysql trilogy])
+    entry = build_entry(active_record: nil, database: %w[sqlite3 postgresql mysql trilogy], hotwire: nil)
     prompter = FakePrompter.new(
       choices: [
         'include',                            # active_record = true
         'postgresql',                         # database = postgresql
-        CreateRailsApp::Wizard::BACK,         # back to database
-        CreateRailsApp::Wizard::BACK,         # back to active_record
+        CreateRailsApp::Wizard::BACK,         # back from hotwire → database
+        CreateRailsApp::Wizard::BACK,         # back from database → active_record
         'skip',                               # active_record = false (database auto-skipped)
-        CreateRailsApp::Wizard::BACK,         # back to active_record
-        'include'                             # active_record = true (database restored)
+        CreateRailsApp::Wizard::BACK,         # back from hotwire → active_record (database skipped)
+        'include',                            # active_record = true (database restored from stash)
+        'include'                             # hotwire = include
       ]
     )
 
@@ -279,6 +280,7 @@ RSpec.describe CreateRailsApp::Wizard do
 
     expect(result[:active_record]).to be(true)
     expect(result[:database]).to eq('postgresql')
+    expect(result[:hotwire]).to be(true)
   end
 
   it 'presents asset_pipeline as enum for Rails 7.2' do
