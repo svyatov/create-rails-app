@@ -32,7 +32,13 @@ module CreateRailsApp
       # @return [Array<Gem::Version>] all installed Rails versions, sorted descending
       def installed_versions
         output, status = Timeout.timeout(10) do
-          Open3.capture2e(@gem_command, 'list', 'rails', '--local', '--exact')
+          if defined?(Bundler)
+            Bundler.with_unbundled_env do
+              Open3.capture2e(@gem_command, 'list', 'rails', '--local', '--exact')
+            end
+          else
+            Open3.capture2e(@gem_command, 'list', 'rails', '--local', '--exact')
+          end
         end
         return [] unless status.success?
 
