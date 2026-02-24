@@ -163,9 +163,9 @@ RSpec.describe CreateRailsApp::Wizard do
     expect(result).not_to have_key(:action_text)
   end
 
-  it 'auto-skips system_test when test is false' do
-    entry = build_entry(test: nil, system_test: nil)
-    prompter = FakePrompter.new(choices: %w[skip])
+  it 'auto-skips system_test when test is none' do
+    entry = build_entry(test: %w[minitest], system_test: nil)
+    prompter = FakePrompter.new(choices: %w[none])
 
     result = described_class.new(compatibility_entry: entry, defaults: {}, prompter: prompter).run
 
@@ -296,16 +296,16 @@ RSpec.describe CreateRailsApp::Wizard do
     expect(ap_options.any? { |opt| opt.include?('sprockets') }).to be(true)
   end
 
-  it 'presents asset_pipeline as include/skip for Rails 8.0+' do
-    entry = build_entry(asset_pipeline: nil)
-    prompter = FakePrompter.new(choices: %w[skip])
+  it 'presents asset_pipeline as enum for Rails 8.0+' do
+    entry = build_entry(asset_pipeline: %w[propshaft sprockets])
+    prompter = FakePrompter.new(choices: %w[propshaft])
 
     result = described_class.new(compatibility_entry: entry, defaults: {}, prompter: prompter).run
 
-    expect(result[:asset_pipeline]).to be(false)
+    expect(result[:asset_pipeline]).to eq('propshaft')
     ap_options = prompter.seen_options.first
-    expect(ap_options.any? { |opt| opt.include?('include') }).to be(true)
-    expect(ap_options.any? { |opt| opt.include?('skip') }).to be(true)
+    expect(ap_options.any? { |opt| opt.include?('propshaft') }).to be(true)
+    expect(ap_options.any? { |opt| opt.include?('sprockets') }).to be(true)
   end
 
   it 'presents bundler_audit step for Rails 8.1' do
@@ -331,7 +331,7 @@ RSpec.describe CreateRailsApp::Wizard do
   it 'back-navigates past auto-skipped steps' do
     entry = build_entry(
       api: nil, javascript: %w[importmap bun], css: %w[tailwind],
-      hotwire: nil, jbuilder: nil, action_text: nil, test: nil
+      hotwire: nil, jbuilder: nil, action_text: nil, test: %w[minitest]
     )
     prompter = FakePrompter.new(
       choices: [
@@ -343,7 +343,7 @@ RSpec.describe CreateRailsApp::Wizard do
         'include',                              # hotwire
         'include',                              # jbuilder
         'include',                              # action_text
-        'include'                               # test
+        'minitest'                              # test
       ]
     )
 

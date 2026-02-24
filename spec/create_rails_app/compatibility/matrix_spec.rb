@@ -46,12 +46,19 @@ RSpec.describe CreateRailsApp::Compatibility::Matrix do
 
     it 'provides asset_pipeline enum values for Rails 7.2' do
       entry = described_class.for('7.2.0')
-      expect(entry.allowed_values(:asset_pipeline)).to eq(%w[sprockets propshaft])
+      expect(entry.allowed_values(:asset_pipeline)).to eq(%w[propshaft sprockets])
     end
 
-    it 'provides nil asset_pipeline (skip-only) for Rails 8.0+' do
+    it 'provides asset_pipeline enum values for Rails 8.0+' do
       entry = described_class.for('8.0.0')
-      expect(entry.allowed_values(:asset_pipeline)).to be_nil
+      expect(entry.allowed_values(:asset_pipeline)).to eq(%w[propshaft sprockets])
+    end
+
+    it 'provides test enum values across all versions' do
+      %w[7.2.0 8.0.0 8.1.0].each do |version|
+        entry = described_class.for(version)
+        expect(entry.allowed_values(:test)).to eq(%w[minitest])
+      end
     end
 
     it 'derives database values from Catalog constants' do

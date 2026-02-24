@@ -36,7 +36,7 @@ module CreateRailsApp
                values: %w[tailwind bootstrap bulma postcss sass].freeze,
                rails_default: 'none' }.freeze,
         asset_pipeline: { type: :enum, flag: '--asset-pipeline', none: '--skip-asset-pipeline',
-                          values: %w[sprockets propshaft].freeze }.freeze,
+                          values: %w[propshaft sprockets].freeze, rails_default: 'sprockets' }.freeze,
         # Skip (included by default, --skip-X to exclude)
         active_record: { type: :skip, skip_flag: '--skip-active-record' }.freeze,
         action_mailer: { type: :skip, skip_flag: '--skip-action-mailer' }.freeze,
@@ -47,7 +47,8 @@ module CreateRailsApp
         action_cable: { type: :skip, skip_flag: '--skip-action-cable' }.freeze,
         hotwire: { type: :skip, skip_flag: '--skip-hotwire' }.freeze,
         jbuilder: { type: :skip, skip_flag: '--skip-jbuilder' }.freeze,
-        test: { type: :skip, skip_flag: '--skip-test' }.freeze,
+        test: { type: :enum, flag: nil, none: '--skip-test',
+                values: %w[minitest].freeze, rails_default: 'minitest' }.freeze,
         system_test: { type: :skip, skip_flag: '--skip-system-test' }.freeze,
         brakeman: { type: :skip, skip_flag: '--skip-brakeman' }.freeze,
         bundler_audit: { type: :skip, skip_flag: '--skip-bundler-audit' }.freeze,

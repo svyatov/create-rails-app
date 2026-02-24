@@ -100,6 +100,10 @@ module CreateRailsApp
         'rollup' => 'ES module-focused bundler',
         'none' => 'no JavaScript setup'
       },
+      test: {
+        'minitest' => 'Rails default testing framework',
+        'none' => 'no test setup'
+      },
       asset_pipeline: {
         'propshaft' => 'modern, lightweight asset pipeline',
         'sprockets' => 'classic asset pipeline with preprocessing',

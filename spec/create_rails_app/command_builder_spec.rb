@@ -41,7 +41,7 @@ RSpec.describe CreateRailsApp::CommandBuilder do
     command = builder.build(
       app_name: 'myapp',
       rails_version: '8.1.0',
-      options: { hotwire: true, test: true }
+      options: { hotwire: true }
     )
     expect(command).to eq(%w[rails _8.1.0_ new myapp])
   end
@@ -144,6 +144,24 @@ RSpec.describe CreateRailsApp::CommandBuilder do
       options: { asset_pipeline: true }
     )
     expect(command).to eq(%w[rails _8.0.0_ new myapp])
+  end
+
+  it 'emits nothing for test minitest (nil flag)' do
+    command = builder.build(
+      app_name: 'myapp',
+      rails_version: '8.1.0',
+      options: { test: 'minitest' }
+    )
+    expect(command).to eq(%w[rails _8.1.0_ new myapp])
+  end
+
+  it 'emits --skip-test for test none' do
+    command = builder.build(
+      app_name: 'myapp',
+      rails_version: '8.1.0',
+      options: { test: false }
+    )
+    expect(command).to include('--skip-test')
   end
 
   it 'emits --skip-bundler-audit when bundler_audit is false' do

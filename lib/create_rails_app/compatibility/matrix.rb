@@ -61,7 +61,7 @@ module CreateRailsApp
         action_cable: nil,
         hotwire: nil,
         jbuilder: nil,
-        test: nil,
+        test: Options::Catalog::DEFINITIONS[:test][:values],
         system_test: nil,
         brakeman: nil,
         rubocop: nil,
@@ -79,7 +79,7 @@ module CreateRailsApp
         thruster: nil,
         solid: nil,
         database: Options::Catalog::DEFINITIONS[:database][:values],
-        asset_pipeline: nil
+        asset_pipeline: Options::Catalog::DEFINITIONS[:asset_pipeline][:values]
       }.freeze
 
       # Options added in Rails 8.1+.
