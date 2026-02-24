@@ -4,18 +4,20 @@ require 'spec_helper'
 
 RSpec.describe CreateRailsApp::Compatibility::Matrix do
   describe '.for' do
-    it 'returns a match for Rails 8.1' do
+    it 'returns a match for Rails 8.1 with bundler_audit' do
       entry = described_class.for('8.1.0')
       expect(entry.supports_option?(:kamal)).to be(true)
       expect(entry.supports_option?(:solid)).to be(true)
       expect(entry.supports_option?(:devcontainer)).to be(true)
+      expect(entry.supports_option?(:bundler_audit)).to be(true)
     end
 
-    it 'returns a match for Rails 8.0' do
+    it 'returns a match for Rails 8.0 without bundler_audit' do
       entry = described_class.for('8.0.1')
       expect(entry.supports_option?(:kamal)).to be(true)
       expect(entry.supports_option?(:brakeman)).to be(true)
       expect(entry.supports_option?(:ci)).to be(true)
+      expect(entry.supports_option?(:bundler_audit)).to be(false)
     end
 
     it 'returns a match for Rails 7.2 with brakeman/ci/devcontainer but without 8.0+ options' do
@@ -28,6 +30,7 @@ RSpec.describe CreateRailsApp::Compatibility::Matrix do
       expect(entry.supports_option?(:kamal)).to be(false)
       expect(entry.supports_option?(:solid)).to be(false)
       expect(entry.supports_option?(:thruster)).to be(false)
+      expect(entry.supports_option?(:bundler_audit)).to be(false)
     end
 
     it 'does not support mariadb databases for Rails 7.2' do
@@ -39,6 +42,28 @@ RSpec.describe CreateRailsApp::Compatibility::Matrix do
     it 'supports mariadb databases for Rails 8.0+' do
       entry = described_class.for('8.0.0')
       expect(entry.allowed_values(:database)).to include('mariadb-mysql', 'mariadb-trilogy')
+    end
+
+    it 'provides asset_pipeline enum values for Rails 7.2' do
+      entry = described_class.for('7.2.0')
+      expect(entry.allowed_values(:asset_pipeline)).to eq(%w[propshaft sprockets])
+    end
+
+    it 'provides nil asset_pipeline (skip-only) for Rails 8.0+' do
+      entry = described_class.for('8.0.0')
+      expect(entry.allowed_values(:asset_pipeline)).to be_nil
+    end
+
+    it 'derives database values from Catalog constants' do
+      entry = described_class.for('7.2.0')
+      expect(entry.allowed_values(:database)).to eq(
+        CreateRailsApp::Options::Catalog::BASE_DATABASE_VALUES
+      )
+
+      entry = described_class.for('8.0.0')
+      expect(entry.allowed_values(:database)).to eq(
+        CreateRailsApp::Options::Catalog::DEFINITIONS[:database][:values]
+      )
     end
 
     it 'raises for unsupported versions' do

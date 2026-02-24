@@ -75,7 +75,8 @@ module CreateRailsApp
         when :skip, :flag
           return if value.nil? || value == true || value == false
         when :enum
-          return if value.nil? || (value == false && definition.key?(:none)) || definition[:values].include?(value)
+          return if value.nil? || definition[:values].include?(value)
+          return if definition.key?(:none) && [true, false].include?(value)
         end
 
         raise ValidationError, "Invalid value for #{key}: #{value.inspect}"

@@ -45,13 +45,13 @@ module CreateRailsApp
       SUPPORTED_SERIES = %w[7.2 8.0 8.1].freeze
 
       # Options shared across all supported Rails versions.
-      # Enum values are derived from Catalog::DEFINITIONS to prevent drift.
+      # Enum values are derived from Catalog to prevent drift.
       COMMON_OPTIONS = {
         api: nil,
-        database: %w[sqlite3 postgresql mysql trilogy].freeze,
+        database: Options::Catalog::BASE_DATABASE_VALUES,
         javascript: Options::Catalog::DEFINITIONS[:javascript][:values],
         css: Options::Catalog::DEFINITIONS[:css][:values],
-        asset_pipeline: nil,
+        asset_pipeline: Options::Catalog::DEFINITIONS[:asset_pipeline][:values],
         active_record: nil,
         action_mailer: nil,
         action_mailbox: nil,
@@ -73,12 +73,18 @@ module CreateRailsApp
         bundle: nil
       }.freeze
 
-      # Options only available in Rails 8.0+.
+      # Options added or changed in Rails 8.0+.
       RAILS_8_OPTIONS = {
         kamal: nil,
         thruster: nil,
         solid: nil,
-        database: %w[sqlite3 postgresql mysql trilogy mariadb-mysql mariadb-trilogy].freeze
+        database: Options::Catalog::DEFINITIONS[:database][:values],
+        asset_pipeline: nil
+      }.freeze
+
+      # Options added in Rails 8.1+.
+      RAILS_81_OPTIONS = {
+        bundler_audit: nil
       }.freeze
 
       # @return [Array<Entry>] all known Rails compatibility entries
@@ -93,7 +99,7 @@ module CreateRailsApp
         ),
         Entry.new(
           requirement: Gem::Requirement.new('~> 8.1.0'),
-          supported_options: COMMON_OPTIONS.merge(RAILS_8_OPTIONS).freeze
+          supported_options: COMMON_OPTIONS.merge(RAILS_8_OPTIONS).merge(RAILS_81_OPTIONS).freeze
         )
       ].freeze
 

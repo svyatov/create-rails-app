@@ -18,17 +18,24 @@ module CreateRailsApp
       # - +:skip+  — opt-out; emits nothing when true (include), +--skip-X+ when false (exclude)
       #
       # @return [Hash{Symbol => Hash}]
+      # Database adapters shared across all Rails versions.
+      BASE_DATABASE_VALUES = %w[sqlite3 postgresql mysql trilogy].freeze
+
+      # Database adapters added in Rails 8.0+.
+      MARIADB_DATABASE_VALUES = %w[mariadb-mysql mariadb-trilogy].freeze
+
       DEFINITIONS = {
         # Flags (opt-in)
         api: { type: :flag, on: '--api' }.freeze,
         # Enums
         database: { type: :enum, flag: '--database',
-                    values: %w[sqlite3 postgresql mysql trilogy mariadb-mysql mariadb-trilogy].freeze }.freeze,
+                    values: (BASE_DATABASE_VALUES + MARIADB_DATABASE_VALUES).freeze }.freeze,
         javascript: { type: :enum, flag: '--javascript', none: '--skip-javascript',
                       values: %w[importmap bun webpack esbuild rollup].freeze }.freeze,
         css: { type: :enum, flag: '--css', none: '--skip-css',
                values: %w[tailwind bootstrap bulma postcss sass].freeze }.freeze,
-        asset_pipeline: { type: :skip, skip_flag: '--skip-asset-pipeline' }.freeze,
+        asset_pipeline: { type: :enum, flag: '--asset-pipeline', none: '--skip-asset-pipeline',
+                          values: %w[propshaft sprockets].freeze }.freeze,
         # Skip (included by default, --skip-X to exclude)
         active_record: { type: :skip, skip_flag: '--skip-active-record' }.freeze,
         action_mailer: { type: :skip, skip_flag: '--skip-action-mailer' }.freeze,
@@ -42,6 +49,7 @@ module CreateRailsApp
         test: { type: :skip, skip_flag: '--skip-test' }.freeze,
         system_test: { type: :skip, skip_flag: '--skip-system-test' }.freeze,
         brakeman: { type: :skip, skip_flag: '--skip-brakeman' }.freeze,
+        bundler_audit: { type: :skip, skip_flag: '--skip-bundler-audit' }.freeze,
         rubocop: { type: :skip, skip_flag: '--skip-rubocop' }.freeze,
         ci: { type: :skip, skip_flag: '--skip-ci' }.freeze,
         docker: { type: :skip, skip_flag: '--skip-docker' }.freeze,
@@ -75,6 +83,7 @@ module CreateRailsApp
         test
         system_test
         brakeman
+        bundler_audit
         rubocop
         ci
         docker

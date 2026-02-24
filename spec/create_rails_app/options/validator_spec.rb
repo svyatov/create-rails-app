@@ -91,6 +91,18 @@ RSpec.describe CreateRailsApp::Options::Validator do
     ).to be(true)
   end
 
+  it 'accepts true for enum with :none key (include with default)' do
+    expect(
+      validator.validate!(app_name: 'myapp', options: { asset_pipeline: true })
+    ).to be(true)
+  end
+
+  it 'rejects true for enum without :none key' do
+    expect do
+      validator.validate!(app_name: 'myapp', options: { database: true })
+    end.to raise_error(CreateRailsApp::ValidationError, /Invalid value/)
+  end
+
   it 'rejects enum value that passes type check but fails compatibility check' do
     # Create an entry that supports database but only allows sqlite3
     restricted_entry = CreateRailsApp::Compatibility::Matrix::Entry.new(

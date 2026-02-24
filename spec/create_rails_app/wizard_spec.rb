@@ -466,6 +466,70 @@ RSpec.describe CreateRailsApp::Wizard do
     expect(result[:database]).to eq('postgresql')
   end
 
+  it 'presents asset_pipeline as enum for Rails 7.2' do
+    entry = CreateRailsApp::Compatibility::Matrix.for('7.2.0')
+    # Find the total steps so we can supply enough default choices
+    keys = CreateRailsApp::Options::Catalog::ORDER.select { |k| entry.supports_option?(k) }
+    choices = Array.new(keys.length) # all defaults
+    prompter = WizardFakePrompter.new(choices: choices)
+
+    described_class.new(
+      compatibility_entry: entry,
+      defaults: {},
+      prompter: prompter
+    ).run
+
+    # asset_pipeline step should present propshaft/sprockets choices
+    ap_index = keys.index(:asset_pipeline)
+    ap_options = prompter.seen_options[ap_index]
+    expect(ap_options.any? { |opt| opt.include?('propshaft') }).to be(true)
+    expect(ap_options.any? { |opt| opt.include?('sprockets') }).to be(true)
+  end
+
+  it 'presents asset_pipeline as include/skip for Rails 8.0+' do
+    entry = CreateRailsApp::Compatibility::Matrix::Entry.new(
+      requirement: Gem::Requirement.new('>= 0'),
+      supported_options: { asset_pipeline: nil }
+    )
+    prompter = WizardFakePrompter.new(choices: %w[skip])
+
+    result = described_class.new(
+      compatibility_entry: entry,
+      defaults: {},
+      prompter: prompter
+    ).run
+
+    expect(result[:asset_pipeline]).to be(false)
+    ap_options = prompter.seen_options.first
+    expect(ap_options.any? { |opt| opt.include?('include') }).to be(true)
+    expect(ap_options.any? { |opt| opt.include?('skip') }).to be(true)
+  end
+
+  it 'presents bundler_audit step for Rails 8.1' do
+    entry = CreateRailsApp::Compatibility::Matrix.for('8.1.0')
+    keys = CreateRailsApp::Options::Catalog::ORDER.select { |k| entry.supports_option?(k) }
+    expect(keys).to include(:bundler_audit)
+
+    choices = Array.new(keys.length) # all defaults
+    prompter = WizardFakePrompter.new(choices: choices)
+
+    described_class.new(
+      compatibility_entry: entry,
+      defaults: {},
+      prompter: prompter
+    ).run
+
+    ba_index = keys.index(:bundler_audit)
+    question = prompter.seen_questions[ba_index]
+    expect(question).to include('Bundler Audit')
+  end
+
+  it 'does not present bundler_audit step for Rails 8.0' do
+    entry = CreateRailsApp::Compatibility::Matrix.for('8.0.0')
+    keys = CreateRailsApp::Options::Catalog::ORDER.select { |k| entry.supports_option?(k) }
+    expect(keys).not_to include(:bundler_audit)
+  end
+
   it 'back-navigates past auto-skipped steps' do
     entry = CreateRailsApp::Compatibility::Matrix::Entry.new(
       requirement: Gem::Requirement.new('>= 0'),

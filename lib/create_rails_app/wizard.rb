@@ -33,6 +33,7 @@ module CreateRailsApp
       test: 'Test framework',
       system_test: 'System tests',
       brakeman: 'Brakeman (security scanner)',
+      bundler_audit: 'Bundler Audit (dependency checker)',
       rubocop: 'RuboCop (linter)',
       ci: 'CI files',
       docker: 'Dockerfile',
@@ -66,6 +67,7 @@ module CreateRailsApp
       test: 'Generates test directory and helpers.',
       system_test: 'Browser-based integration tests via Capybara.',
       brakeman: 'Static analysis for security vulnerabilities.',
+      bundler_audit: 'Checks dependencies for known vulnerabilities.',
       rubocop: 'Ruby style and lint checking.',
       ci: 'Generates CI workflow configuration.',
       docker: 'Generates Dockerfile for containerized deployment.',
@@ -97,6 +99,11 @@ module CreateRailsApp
         'esbuild' => 'extremely fast JS bundler',
         'rollup' => 'ES module-focused bundler',
         'none' => 'no JavaScript setup'
+      },
+      asset_pipeline: {
+        'propshaft' => 'modern, lightweight asset pipeline',
+        'sprockets' => 'classic asset pipeline with preprocessing',
+        'none' => 'no asset pipeline'
       },
       css: {
         'tailwind' => 'utility-first CSS framework',
@@ -180,6 +187,9 @@ module CreateRailsApp
     # @return [Integer]
     def find_previous_unskipped(keys, current_index)
       i = current_index - 1
+      # i.positive? (not i >= 0) stops the loop at i==0 so we can check
+      # the first step explicitly below.  If every preceding step is
+      # skipped, we stay at current_index (nowhere to go back to).
       i -= 1 while i.positive? && skip_step?(keys[i])
       return current_index if i >= 0 && skip_step?(keys[i])
 
@@ -200,7 +210,13 @@ module CreateRailsApp
       when :flag
         ask_flag(question, key)
       when :enum
-        ask_enum(question, key, definition)
+        # When the Matrix provides nil (no enum values), the option is a
+        # simple include/skip for this Rails version (e.g. asset_pipeline in 8.0+).
+        if @compatibility_entry.allowed_values(key)
+          ask_enum(question, key, definition)
+        else
+          ask_skip(question, key)
+        end
       else
         raise Error, "Unknown option type for #{key}"
       end

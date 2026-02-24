@@ -27,15 +27,30 @@ RSpec.describe CreateRailsApp::Options::Catalog do
     expect(definition[:on]).to eq('--devcontainer')
   end
 
-  it 'defines asset_pipeline as a skip type' do
+  it 'defines asset_pipeline as an enum type with propshaft and sprockets' do
     definition = described_class.fetch(:asset_pipeline)
+    expect(definition[:type]).to eq(:enum)
+    expect(definition[:flag]).to eq('--asset-pipeline')
+    expect(definition[:none]).to eq('--skip-asset-pipeline')
+    expect(definition[:values]).to eq(%w[propshaft sprockets])
+  end
+
+  it 'defines bundler_audit as a skip type' do
+    definition = described_class.fetch(:bundler_audit)
     expect(definition[:type]).to eq(:skip)
-    expect(definition[:skip_flag]).to eq('--skip-asset-pipeline')
+    expect(definition[:skip_flag]).to eq('--skip-bundler-audit')
   end
 
   it 'includes mariadb database values' do
     definition = described_class.fetch(:database)
     expect(definition[:values]).to include('mariadb-mysql', 'mariadb-trilogy')
+  end
+
+  it 'composes database values from BASE and MARIADB constants' do
+    definition = described_class.fetch(:database)
+    expect(definition[:values]).to eq(
+      described_class::BASE_DATABASE_VALUES + described_class::MARIADB_DATABASE_VALUES
+    )
   end
 
   it 'raises KeyError for unknown option' do

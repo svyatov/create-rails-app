@@ -109,4 +109,40 @@ RSpec.describe CreateRailsApp::CommandBuilder do
     command = builder.build(app_name: 'myapp', options: { database: 'postgresql' })
     expect(command).to eq(%w[rails new myapp --database=postgresql])
   end
+
+  it 'emits --asset-pipeline=sprockets for enum value' do
+    command = builder.build(
+      app_name: 'myapp',
+      rails_version: '7.2.0',
+      options: { asset_pipeline: 'sprockets' }
+    )
+    expect(command).to include('--asset-pipeline=sprockets')
+  end
+
+  it 'emits --skip-asset-pipeline for asset_pipeline false' do
+    command = builder.build(
+      app_name: 'myapp',
+      rails_version: '8.0.0',
+      options: { asset_pipeline: false }
+    )
+    expect(command).to include('--skip-asset-pipeline')
+  end
+
+  it 'emits nothing for asset_pipeline true (include with default)' do
+    command = builder.build(
+      app_name: 'myapp',
+      rails_version: '8.0.0',
+      options: { asset_pipeline: true }
+    )
+    expect(command).to eq(%w[rails _8.0.0_ new myapp])
+  end
+
+  it 'emits --skip-bundler-audit when bundler_audit is false' do
+    command = builder.build(
+      app_name: 'myapp',
+      rails_version: '8.1.0',
+      options: { bundler_audit: false }
+    )
+    expect(command).to include('--skip-bundler-audit')
+  end
 end

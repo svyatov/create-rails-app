@@ -66,6 +66,8 @@ module CreateRailsApp
       def confirm(question, default: true)
         ::CLI::UI.confirm(question, default: default)
       rescue BackKeyPressed
+        # Confirm callers (preset save, overwrite prompts) don't handle BACK;
+        # swallowing the key press and returning the default is intentional.
         default
       end
 
