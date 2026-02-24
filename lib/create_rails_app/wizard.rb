@@ -10,7 +10,7 @@ module CreateRailsApp
   # @see CLI#run_interactive_wizard!
   class Wizard
     # Sentinel returned by the prompter when the user presses Ctrl+B.
-    BACK = Object.new.freeze
+    BACK = Object.new.tap { |o| o.define_singleton_method(:inspect) { '#<BACK>' } }.freeze
 
     # Human-readable labels for each option key.
     #

@@ -132,7 +132,7 @@ module CreateRailsApp
         minimal: @options[:minimal]
       )
 
-      @runner.run!(command, dry_run: @options[:dry_run])
+      @runner.run!(command, dry_run: @options[:dry_run] || false)
       unless @options[:dry_run]
         begin
           @store.save_last_used(selected_options)
@@ -182,6 +182,9 @@ module CreateRailsApp
     def validate_top_level_flags!
       conflicting_create_action = @options[:preset] || @options[:save_preset] || !@argv.empty?
       query_action = @options[:list_presets] || @options[:show_preset]
+      if @options[:list_presets] && @options[:show_preset]
+        raise ValidationError, '--list-presets and --show-preset cannot be combined'
+      end
       if query_action && (@options[:delete_preset] || conflicting_create_action)
         raise ValidationError, 'Preset query options cannot be combined with other actions'
       end
@@ -281,7 +284,9 @@ module CreateRailsApp
 
         series = "#{v.segments[0]}.#{v.segments[1]}"
         Compatibility::Matrix.for(version)
-        return VersionChoice.new(version: version, series: series, needs_install: installed_rails[series] != version)
+        installed_version = installed_rails[series]
+        needs_install = installed_version.nil? || Gem::Version.new(installed_version) != v
+        return VersionChoice.new(version: version, series: series, needs_install: needs_install)
       end
 
       choices = build_version_choices(installed_rails)

@@ -331,7 +331,7 @@ RSpec.describe CreateRailsApp::CLI do
 
     expect(runner).to receive(:run!).with(
       satisfy { |cmd| cmd.first(4) == %w[rails _7.2.0_ new myapp] },
-      dry_run: nil
+      dry_run: false
     ).ordered
 
     prompter = CLIFakePrompter.new(
@@ -1070,5 +1070,54 @@ RSpec.describe CreateRailsApp::CLI do
     expect(runner).to have_received(:run!).with(
       satisfy { |cmd| cmd.include?('gem') && cmd.include?('install') }
     )
+  end
+
+  it 'rejects --list-presets combined with --show-preset' do
+    err = StringIO.new
+    status = described_class.start(
+      ['--list-presets', '--show-preset', 'foo'],
+      out: StringIO.new,
+      err: err,
+      store: instance_double(CreateRailsApp::Config::Store),
+      detector: detector,
+      rails_detector: rails_detector,
+      runner: instance_double(CreateRailsApp::Runner),
+      prompter: CLIFakePrompter.new
+    )
+
+    expect(status).to eq(1)
+    expect(err.string).to include('--list-presets and --show-preset cannot be combined')
+  end
+
+  it 'skips install when --rails-version matches installed (Gem::Version comparison)' do
+    allow(rails_detector).to receive(:detect).and_return({ '8.1' => '8.1.0' })
+
+    store = instance_double(CreateRailsApp::Config::Store, last_used: {})
+    allow(store).to receive(:save_last_used)
+    allow(store).to receive(:save_preset)
+    runner = instance_double(CreateRailsApp::Runner)
+    # Should only receive ONE run! call (the rails new), not a gem install
+    expect(runner).to receive(:run!).once.with(
+      satisfy { |cmd| cmd.include?('new') && cmd.include?('myapp') },
+      dry_run: true
+    )
+
+    prompter = CLIFakePrompter.new(
+      choices: ['create'],
+      confirms: [false]
+    )
+
+    status = described_class.start(
+      ['myapp', '--dry-run', '--rails-version', '8.1'],
+      out: StringIO.new,
+      err: StringIO.new,
+      store: store,
+      detector: detector,
+      rails_detector: rails_detector,
+      runner: runner,
+      prompter: prompter
+    )
+
+    expect(status).to eq(0)
   end
 end

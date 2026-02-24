@@ -5,6 +5,8 @@ require 'create_rails_app'
 
 begin
   exit CreateRailsApp::CLI.start(ARGV)
+rescue Interrupt
+  exit 130
 rescue StandardError => e
   warn "create-rails-app: #{e.message}"
   exit 1
