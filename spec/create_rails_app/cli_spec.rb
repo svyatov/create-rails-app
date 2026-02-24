@@ -94,7 +94,9 @@ RSpec.describe CreateRailsApp::CLI do
     %w[--dry-run --list-presets] => '--dry-run cannot be combined',
     %w[--list-presets --show-preset foo] => '--list-presets and --show-preset cannot be combined',
     %w[--list-presets --preset fast myapp] => 'Preset query options cannot be combined',
-    %w[--show-preset foo --save-preset bar myapp] => 'Preset query options cannot be combined'
+    %w[--show-preset foo --save-preset bar myapp] => 'Preset query options cannot be combined',
+    %w[myapp --minimal --preset fast] => '--minimal cannot be combined with --preset',
+    %w[myapp --minimal --save-preset fast] => '--minimal cannot be combined with --save-preset'
   }.each do |argv, msg|
     it "rejects #{argv.join(' ')}" do
       err = StringIO.new
@@ -232,19 +234,16 @@ RSpec.describe CreateRailsApp::CLI do
     expect(status).to eq(0)
   end
 
-  it 'passes --minimal through to command builder' do
-    store = instance_double(CreateRailsApp::Config::Store, last_used: {})
-    allow(store).to receive(:save_last_used)
-    allow(store).to receive(:save_preset)
+  it 'passes --minimal directly without wizard or store' do
+    store = instance_double(CreateRailsApp::Config::Store)
     runner = instance_double(CreateRailsApp::Runner)
     expect(runner).to receive(:run!).with(
-      satisfy { |cmd| cmd.include?('--minimal') }, dry_run: true
+      %w[rails _8.1.2_ new myapp --minimal], dry_run: true
     )
 
     status = run_cli(
       ['myapp', '--dry-run', '--rails-version', '8.1.2', '--minimal'],
-      store: store, runner: runner,
-      prompter: FakePrompter.new(choices: ['create'], confirms: [false])
+      store: store, runner: runner
     )
     expect(status).to eq(0)
   end

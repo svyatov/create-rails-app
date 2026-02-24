@@ -99,6 +99,22 @@ module CreateRailsApp
       builder = CommandBuilder.new
 
       app_name = resolve_app_name!
+
+      if @options[:minimal]
+        if version_choice.needs_install
+          installed_version = install_rails!(version_choice)
+          version_choice = VersionChoice.new(
+            version: installed_version || version_choice.version,
+            series: version_choice.series,
+            needs_install: false
+          )
+        end
+
+        command = builder.build(app_name: app_name, rails_version: version_choice.version, options: {}, minimal: true)
+        @runner.run!(command, dry_run: @options[:dry_run] || false)
+        return 0
+      end
+
       selected_options =
         if @options[:preset]
           load_preset_options!
@@ -128,7 +144,7 @@ module CreateRailsApp
         app_name: app_name,
         rails_version: version_choice.version,
         options: selected_options,
-        minimal: @options[:minimal]
+        minimal: false
       )
 
       @runner.run!(command, dry_run: @options[:dry_run] || false)
@@ -199,6 +215,11 @@ module CreateRailsApp
       if @options[:doctor] &&
          (query_action || @options[:delete_preset] || @options[:dry_run] || conflicting_create_action)
         raise ValidationError, '--doctor cannot be combined with other actions'
+      end
+
+      raise ValidationError, '--minimal cannot be combined with --preset' if @options[:minimal] && @options[:preset]
+      if @options[:minimal] && @options[:save_preset]
+        raise ValidationError, '--minimal cannot be combined with --save-preset'
       end
 
       conflicting_action = @options[:doctor] || query_action
@@ -411,7 +432,7 @@ module CreateRailsApp
           app_name: app_name,
           rails_version: version_choice.version,
           options: selected_options,
-          minimal: @options[:minimal]
+          minimal: false
         )
         show_summary(
           app_name: app_name,
