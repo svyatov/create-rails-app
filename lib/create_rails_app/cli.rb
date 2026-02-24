@@ -97,7 +97,7 @@ module CreateRailsApp
       version_choice = resolve_rails_version!(installed_rails)
       compatibility_entry = Compatibility::Matrix.for(version_choice.version || "#{version_choice.series}.0")
       builder = CommandBuilder.new
-      last_used = symbolize_keys(@store.last_used)
+      last_used = @store.last_used.transform_keys(&:to_sym)
 
       app_name = resolve_app_name!
       selected_options =
@@ -376,7 +376,7 @@ module CreateRailsApp
       preset = @store.preset(@options[:preset])
       raise ValidationError, "Preset not found: #{@options[:preset]}" unless preset
 
-      symbolize_keys(preset)
+      preset.transform_keys(&:to_sym)
     end
 
     # Runs the interactive wizard loop with summary + edit-again flow.
@@ -427,11 +427,6 @@ module CreateRailsApp
       end
     end
 
-    # @param app_name [String]
-    # @param command [Array<String>]
-    # @param runtime_versions [Detection::RuntimeInfo]
-    # @param version_choice [VersionChoice]
-    # @return [void]
     def show_summary(app_name:, command:, runtime_versions:, version_choice:)
       new_idx = if command[1] == 'new' then 1
                 elsif command[2] == 'new' then 2
@@ -441,8 +436,14 @@ module CreateRailsApp
       args = command[(new_idx + 2)..] || []
 
       prompter.frame('create-rails-app summary') do
+        rails_display = version_choice.version || "~> #{version_choice.series}"
         runtime_line = "#{palette.color(:summary_label, 'Runtime:')} "
-        runtime_line += format_runtime_versions(runtime_versions, version_choice)
+        runtime_line += [
+          ['ruby', runtime_versions.ruby],
+          ['rubygems', runtime_versions.rubygems],
+          ['rails', rails_display]
+        ].map { |name, ver| "#{palette.color(:runtime_name, name)} #{palette.color(:runtime_value, ver.to_s)}" }
+         .join(', ')
         prompter.say(runtime_line)
 
         if version_choice.needs_install
@@ -453,39 +454,18 @@ module CreateRailsApp
 
         command_line = "#{palette.color(:command_base, 'rails new')} "
         command_line += palette.color(:command_app, app_name)
-        command_line += " #{format_args(args)}" unless args.empty?
+        unless args.empty?
+          formatted = args.map do |arg|
+            next palette.color(:arg_value, arg) unless arg.start_with?('--')
+            next palette.color(:arg_name, arg) unless arg.include?('=')
+
+            name, value = arg.split('=', 2)
+            "#{palette.color(:arg_name, name)}#{palette.color(:arg_eq, '=')}#{palette.color(:arg_value, value)}"
+          end
+          command_line += " #{formatted.join(' ')}"
+        end
         prompter.say("#{palette.color(:summary_label, 'Command:')} #{command_line}")
       end
-    end
-
-    # @param runtime_versions [Detection::RuntimeInfo]
-    # @param version_choice [VersionChoice]
-    # @return [String]
-    def format_runtime_versions(runtime_versions, version_choice)
-      rails_display = version_choice.version || "~> #{version_choice.series}"
-      [
-        ['ruby', runtime_versions.ruby],
-        ['rubygems', runtime_versions.rubygems],
-        ['rails', rails_display]
-      ].map do |name, version|
-        "#{palette.color(:runtime_name, name)} #{palette.color(:runtime_value, version.to_s)}"
-      end.join(', ')
-    end
-
-    # @param args [Array<String>]
-    # @return [String]
-    def format_args(args)
-      args.map { |argument| format_argument(argument) }.join(' ')
-    end
-
-    # @param argument [String]
-    # @return [String]
-    def format_argument(argument)
-      return palette.color(:arg_value, argument) unless argument.start_with?('--')
-      return palette.color(:arg_name, argument) unless argument.include?('=')
-
-      name, value = argument.split('=', 2)
-      "#{palette.color(:arg_name, name)}#{palette.color(:arg_eq, '=')}#{palette.color(:arg_value, value)}"
     end
 
     # @param selected_options [Hash{Symbol => Object}]
@@ -526,12 +506,6 @@ module CreateRailsApp
       raise ValidationError,
             "Invalid preset name: #{name.inspect}. " \
             'Must start with alphanumeric, then alphanumeric/dashes/underscores (max 64 chars).'
-    end
-
-    # @param hash [Hash{String => Object}]
-    # @return [Hash{Symbol => Object}]
-    def symbolize_keys(hash)
-      hash.transform_keys(&:to_sym)
     end
 
     # @return [UI::Prompter]

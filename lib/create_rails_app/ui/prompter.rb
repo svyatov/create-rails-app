@@ -1,15 +1,28 @@
 # frozen_string_literal: true
 
 require 'cli/ui'
-require_relative 'back_navigation_patch'
 
 module CreateRailsApp
   module UI
+    # Raised when the user presses Ctrl+B during a prompt.
+    class BackKeyPressed < StandardError; end
+
     # Thin wrapper around +cli-ui+ for all user interaction.
     #
     # Every prompt the wizard issues goes through this class, making it
     # easy to inject a test double.
     class Prompter
+      CTRL_B = "\u0002"
+
+      module ReadCharPatch
+        def read_char
+          char = super
+          raise BackKeyPressed if char == CTRL_B
+
+          char
+        end
+      end
+
       # Enables the +cli-ui+ stdout router and applies the Ctrl+B patch.
       #
       # Call once before creating a Prompter instance. Idempotent.
@@ -17,7 +30,15 @@ module CreateRailsApp
       # @return [void]
       def self.setup!
         ::CLI::UI::StdoutRouter.enable
-        BackNavigationPatch.apply!
+
+        unless ::CLI::UI::Prompt.respond_to?(:read_char)
+          raise Error, 'CLI::UI::Prompt does not respond to read_char; back-navigation patch cannot be applied'
+        end
+
+        singleton = ::CLI::UI::Prompt.singleton_class
+        return if singleton.ancestors.include?(ReadCharPatch)
+
+        singleton.prepend(ReadCharPatch)
       end
 
       # @param out [IO] output stream

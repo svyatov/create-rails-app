@@ -55,4 +55,9 @@ RSpec.describe CreateRailsApp::UI::Prompter do
 
     expect(prompter.text('Name:')).to eq(CreateRailsApp::Wizard::BACK)
   end
+
+  it 'raises if CLI::UI::Prompt does not respond to read_char' do
+    stub_const('CLI::UI::Prompt', Class.new)
+    expect { described_class.setup! }.to raise_error(CreateRailsApp::Error, /read_char/)
+  end
 end

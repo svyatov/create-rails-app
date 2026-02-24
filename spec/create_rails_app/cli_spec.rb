@@ -2,44 +2,7 @@
 
 require 'spec_helper'
 require 'stringio'
-
-class CLIFakePrompter
-  attr_reader :messages
-
-  def initialize(choices: [], texts: [], confirms: [])
-    @choices = choices
-    @texts = texts
-    @confirms = confirms
-    @messages = []
-  end
-
-  def frame(_title)
-    yield if block_given?
-  end
-
-  def choose(_question, options:, default: nil)
-    value = @choices.shift
-    return value if value
-
-    default || options.first
-  end
-
-  def text(_question, default: nil, allow_empty: true)
-    value = @texts.shift
-    value = default if value.nil?
-    value = '' if value.nil? && allow_empty
-    value
-  end
-
-  def confirm(_question, default: true)
-    value = @confirms.shift
-    value.nil? ? default : value
-  end
-
-  def say(message)
-    @messages << message
-  end
-end
+require_relative '../support/fake_prompter'
 
 RSpec.describe CreateRailsApp::CLI do
   let(:rails_detector) { instance_double(CreateRailsApp::Detection::RailsVersions) }
@@ -56,39 +19,29 @@ RSpec.describe CreateRailsApp::CLI do
     allow(rails_detector).to receive(:detect).and_return({ '8.1' => '8.1.2' })
   end
 
-  it 'prints version with --version' do
-    out = StringIO.new
-
-    status = described_class.start(
-      ['--version'],
-      out: out,
-      err: StringIO.new,
-      store: instance_double(CreateRailsApp::Config::Store),
+  # @param argv [Array<String>]
+  # @return [Integer] exit code
+  def run_cli(argv, out: StringIO.new, err: StringIO.new, store: nil, runner: nil, prompter: nil)
+    described_class.start(
+      argv,
+      out: out, err: err,
+      store: store || instance_double(CreateRailsApp::Config::Store),
       detector: detector,
       rails_detector: rails_detector,
-      runner: instance_double(CreateRailsApp::Runner),
-      prompter: CLIFakePrompter.new
+      runner: runner || instance_double(CreateRailsApp::Runner),
+      prompter: prompter || FakePrompter.new
     )
+  end
 
-    expect(status).to eq(0)
+  it 'prints version with --version' do
+    out = StringIO.new
+    expect(run_cli(['--version'], out: out)).to eq(0)
     expect(out.string.strip).to eq(CreateRailsApp::VERSION)
   end
 
   it 'prints help with --help' do
     out = StringIO.new
-
-    status = described_class.start(
-      ['--help'],
-      out: out,
-      err: StringIO.new,
-      store: instance_double(CreateRailsApp::Config::Store),
-      detector: detector,
-      rails_detector: rails_detector,
-      runner: instance_double(CreateRailsApp::Runner),
-      prompter: CLIFakePrompter.new
-    )
-
-    expect(status).to eq(0)
+    expect(run_cli(['--help'], out: out)).to eq(0)
     expect(out.string).to include('Usage: create-rails-app')
     expect(out.string).to include('--help')
     expect(out.string).to include('--preset')
@@ -96,19 +49,7 @@ RSpec.describe CreateRailsApp::CLI do
 
   it 'runs doctor and prints info' do
     out = StringIO.new
-
-    status = described_class.start(
-      ['--doctor'],
-      out: out,
-      err: StringIO.new,
-      store: instance_double(CreateRailsApp::Config::Store),
-      detector: detector,
-      rails_detector: rails_detector,
-      runner: instance_double(CreateRailsApp::Runner),
-      prompter: CLIFakePrompter.new
-    )
-
-    expect(status).to eq(0)
+    expect(run_cli(['--doctor'], out: out)).to eq(0)
     expect(out.string).to include('ruby:')
     expect(out.string).to include('rails 8.1: 8.1.2')
     expect(out.string).to include('options')
@@ -117,19 +58,7 @@ RSpec.describe CreateRailsApp::CLI do
   it 'lists presets' do
     out = StringIO.new
     store = instance_double(CreateRailsApp::Config::Store, preset_names: %w[alpha beta])
-
-    status = described_class.start(
-      ['--list-presets'],
-      out: out,
-      err: StringIO.new,
-      store: store,
-      detector: detector,
-      rails_detector: rails_detector,
-      runner: instance_double(CreateRailsApp::Runner),
-      prompter: CLIFakePrompter.new
-    )
-
-    expect(status).to eq(0)
+    expect(run_cli(['--list-presets'], out: out, store: store)).to eq(0)
     expect(out.string).to include('alpha')
     expect(out.string).to include('beta')
   end
@@ -137,19 +66,7 @@ RSpec.describe CreateRailsApp::CLI do
   it 'shows preset values' do
     out = StringIO.new
     store = instance_double(CreateRailsApp::Config::Store, preset: { 'database' => 'postgresql', 'api' => true })
-
-    status = described_class.start(
-      ['--show-preset', 'fast'],
-      out: out,
-      err: StringIO.new,
-      store: store,
-      detector: detector,
-      rails_detector: rails_detector,
-      runner: instance_double(CreateRailsApp::Runner),
-      prompter: CLIFakePrompter.new
-    )
-
-    expect(status).to eq(0)
+    expect(run_cli(['--show-preset', 'fast'], out: out, store: store)).to eq(0)
     expect(out.string).to include('fast')
     expect(out.string).to include('database: "postgresql"')
   end
@@ -157,89 +74,36 @@ RSpec.describe CreateRailsApp::CLI do
   it 'returns error for missing preset' do
     err = StringIO.new
     store = instance_double(CreateRailsApp::Config::Store, preset: nil)
-
-    status = described_class.start(
-      ['--show-preset', 'missing'],
-      out: StringIO.new,
-      err: err,
-      store: store,
-      detector: detector,
-      rails_detector: rails_detector,
-      runner: instance_double(CreateRailsApp::Runner),
-      prompter: CLIFakePrompter.new
-    )
-
-    expect(status).to eq(1)
+    expect(run_cli(['--show-preset', 'missing'], err: err, store: store)).to eq(1)
     expect(err.string).to include('Preset not found')
   end
 
   it 'delegates --delete-preset to store' do
     store = instance_double(CreateRailsApp::Config::Store)
     expect(store).to receive(:delete_preset).with('old')
-
-    status = described_class.start(
-      ['--delete-preset', 'old'],
-      out: StringIO.new,
-      err: StringIO.new,
-      store: store,
-      detector: detector,
-      rails_detector: rails_detector,
-      runner: instance_double(CreateRailsApp::Runner),
-      prompter: CLIFakePrompter.new
-    )
-
-    expect(status).to eq(0)
+    expect(run_cli(['--delete-preset', 'old'], store: store)).to eq(0)
   end
 
-  it 'rejects conflicting flags' do
-    err = StringIO.new
-    status = described_class.start(
-      ['myapp', '--doctor'],
-      out: StringIO.new,
-      err: err,
-      store: instance_double(CreateRailsApp::Config::Store),
-      detector: detector,
-      rails_detector: rails_detector,
-      runner: instance_double(CreateRailsApp::Runner),
-      prompter: CLIFakePrompter.new
-    )
-
-    expect(status).to eq(1)
-    expect(err.string).to include('--doctor cannot be combined')
-  end
-
-  it 'rejects --version combined with --doctor' do
-    err = StringIO.new
-    status = described_class.start(
-      ['--version', '--doctor'],
-      out: StringIO.new,
-      err: err,
-      store: instance_double(CreateRailsApp::Config::Store),
-      detector: detector,
-      rails_detector: rails_detector,
-      runner: instance_double(CreateRailsApp::Runner),
-      prompter: CLIFakePrompter.new
-    )
-
-    expect(status).to eq(1)
-    expect(err.string).to include('--version cannot be combined')
+  {
+    %w[myapp --doctor] => '--doctor cannot be combined',
+    %w[--version --doctor] => '--version cannot be combined',
+    %w[myapp --delete-preset old] => '--delete-preset cannot be combined',
+    %w[--dry-run --delete-preset old] => '--dry-run cannot be combined',
+    %w[--version --dry-run] => '--version cannot be combined',
+    %w[--doctor --dry-run] => '--doctor cannot be combined',
+    %w[--dry-run --list-presets] => '--dry-run cannot be combined',
+    %w[--list-presets --show-preset foo] => '--list-presets and --show-preset cannot be combined'
+  }.each do |argv, msg|
+    it "rejects #{argv.join(' ')}" do
+      err = StringIO.new
+      expect(run_cli(argv, err: err)).to eq(1)
+      expect(err.string).to include(msg)
+    end
   end
 
   it 'returns error for unknown flags' do
     err = StringIO.new
-
-    status = described_class.start(
-      ['--unknown-flag'],
-      out: StringIO.new,
-      err: err,
-      store: instance_double(CreateRailsApp::Config::Store),
-      detector: detector,
-      rails_detector: rails_detector,
-      runner: instance_double(CreateRailsApp::Runner),
-      prompter: CLIFakePrompter.new
-    )
-
-    expect(status).to eq(1)
+    expect(run_cli(['--unknown-flag'], err: err)).to eq(1)
     expect(err.string).to include('invalid option')
   end
 
@@ -253,27 +117,15 @@ RSpec.describe CreateRailsApp::CLI do
       dry_run: true
     )
 
-    prompter = CLIFakePrompter.new(
-      choices: ['create'],
-      confirms: [false]
-    )
-
-    status = described_class.start(
+    status = run_cli(
       ['myapp', '--dry-run', '--rails-version', '8.1.2'],
-      out: StringIO.new,
-      err: StringIO.new,
-      store: store,
-      detector: detector,
-      rails_detector: rails_detector,
-      runner: runner,
-      prompter: prompter
+      store: store, runner: runner,
+      prompter: FakePrompter.new(choices: ['create'], confirms: [false])
     )
-
     expect(status).to eq(0)
   end
 
   it 'defers installation in dry-run when rails version not installed' do
-    # Only 8.1 installed, requesting 7.2.0
     allow(rails_detector).to receive(:detect).and_return({ '8.1' => '8.1.2' })
 
     store = instance_double(CreateRailsApp::Config::Store, last_used: {})
@@ -281,39 +133,22 @@ RSpec.describe CreateRailsApp::CLI do
     allow(store).to receive(:save_preset)
     runner = instance_double(CreateRailsApp::Runner)
 
-    # First call: dry-run install command
     expect(runner).to receive(:run!).with(
-      ['gem', 'install', 'rails', '-v', '7.2.0'],
-      dry_run: true
+      ['gem', 'install', 'rails', '-v', '7.2.0'], dry_run: true
+    ).ordered
+    expect(runner).to receive(:run!).with(
+      satisfy { |cmd| cmd.include?('new') && cmd.include?('myapp') }, dry_run: true
     ).ordered
 
-    # Second call: dry-run rails new (with version pin since exact version known)
-    expect(runner).to receive(:run!).with(
-      satisfy { |cmd| cmd.include?('new') && cmd.include?('myapp') },
-      dry_run: true
-    ).ordered
-
-    prompter = CLIFakePrompter.new(
-      choices: ['create'],
-      confirms: [false]
-    )
-
-    status = described_class.start(
+    status = run_cli(
       ['myapp', '--dry-run', '--rails-version', '7.2.0'],
-      out: StringIO.new,
-      err: StringIO.new,
-      store: store,
-      detector: detector,
-      rails_detector: rails_detector,
-      runner: runner,
-      prompter: prompter
+      store: store, runner: runner,
+      prompter: FakePrompter.new(choices: ['create'], confirms: [false])
     )
-
     expect(status).to eq(0)
   end
 
   it 'installs rails with spinner when not installed' do
-    # First detect: only 8.1 installed; second detect: 7.2 now installed
     allow(rails_detector).to receive(:detect).and_return(
       { '8.1' => '8.1.2' },
       { '8.1' => '8.1.2', '7.2' => '7.2.5' }
@@ -328,28 +163,15 @@ RSpec.describe CreateRailsApp::CLI do
     expect(runner).to receive(:run!).with(
       ['gem', 'install', 'rails', '-v', '7.2.0']
     ).ordered
-
     expect(runner).to receive(:run!).with(
-      satisfy { |cmd| cmd.first(4) == %w[rails _7.2.0_ new myapp] },
-      dry_run: false
+      satisfy { |cmd| cmd.first(4) == %w[rails _7.2.0_ new myapp] }, dry_run: false
     ).ordered
 
-    prompter = CLIFakePrompter.new(
-      choices: ['create'],
-      confirms: [false]
-    )
-
-    status = described_class.start(
+    status = run_cli(
       ['myapp', '--rails-version', '7.2.0'],
-      out: StringIO.new,
-      err: StringIO.new,
-      store: store,
-      detector: detector,
-      rails_detector: rails_detector,
-      runner: runner,
-      prompter: prompter
+      store: store, runner: runner,
+      prompter: FakePrompter.new(choices: ['create'], confirms: [false])
     )
-
     expect(status).to eq(0)
   end
 
@@ -362,57 +184,31 @@ RSpec.describe CreateRailsApp::CLI do
     runner = instance_double(CreateRailsApp::Runner)
     allow(runner).to receive(:run!)
 
-    status = described_class.start(
+    status = run_cli(
       ['myapp', '--preset', 'fast', '--dry-run', '--rails-version', '8.1.2'],
-      out: StringIO.new,
-      err: StringIO.new,
-      store: store,
-      detector: detector,
-      rails_detector: rails_detector,
-      runner: runner,
-      prompter: CLIFakePrompter.new(confirms: [false])
+      store: store, runner: runner,
+      prompter: FakePrompter.new(confirms: [false])
     )
-
     expect(status).to eq(0)
   end
 
   it 'returns error for missing app name with --preset' do
     err = StringIO.new
     store = instance_double(CreateRailsApp::Config::Store, last_used: {})
-
-    status = described_class.start(
-      ['--preset', 'fast', '--rails-version', '8.1.2'],
-      out: StringIO.new,
-      err: err,
-      store: store,
-      detector: detector,
-      rails_detector: rails_detector,
-      runner: instance_double(CreateRailsApp::Runner),
-      prompter: CLIFakePrompter.new
-    )
-
-    expect(status).to eq(1)
+    expect(run_cli(['--preset', 'fast', '--rails-version', '8.1.2'], err: err, store: store)).to eq(1)
     expect(err.string).to include('App name is required')
   end
 
   it 'returns 130 on interrupt' do
     store = instance_double(CreateRailsApp::Config::Store, last_used: {})
-    runner = instance_double(CreateRailsApp::Runner)
-    prompter = CLIFakePrompter.new
+    prompter = FakePrompter.new
     allow(prompter).to receive(:choose).and_raise(Interrupt)
 
     err = StringIO.new
-    status = described_class.start(
+    status = run_cli(
       ['myapp', '--rails-version', '8.1.2'],
-      out: StringIO.new,
-      err: err,
-      store: store,
-      detector: detector,
-      rails_detector: rails_detector,
-      runner: runner,
-      prompter: prompter
+      err: err, store: store, prompter: prompter
     )
-
     expect(status).to eq(130)
     expect(err.string).to include('See ya!')
   end
@@ -423,26 +219,14 @@ RSpec.describe CreateRailsApp::CLI do
     allow(store).to receive(:save_preset)
     runner = instance_double(CreateRailsApp::Runner)
     expect(runner).to receive(:run!).with(
-      satisfy { |cmd| cmd.include?('prompted_app') },
-      dry_run: true
-    )
-    prompter = CLIFakePrompter.new(
-      texts: ['prompted_app'],
-      choices: ['create'],
-      confirms: [false]
+      satisfy { |cmd| cmd.include?('prompted_app') }, dry_run: true
     )
 
-    status = described_class.start(
+    status = run_cli(
       ['--dry-run', '--rails-version', '8.1.2'],
-      out: StringIO.new,
-      err: StringIO.new,
-      store: store,
-      detector: detector,
-      rails_detector: rails_detector,
-      runner: runner,
-      prompter: prompter
+      store: store, runner: runner,
+      prompter: FakePrompter.new(texts: ['prompted_app'], choices: ['create'], confirms: [false])
     )
-
     expect(status).to eq(0)
   end
 
@@ -452,49 +236,21 @@ RSpec.describe CreateRailsApp::CLI do
     allow(store).to receive(:save_preset)
     runner = instance_double(CreateRailsApp::Runner)
     expect(runner).to receive(:run!).with(
-      satisfy { |cmd| cmd.include?('--minimal') },
-      dry_run: true
-    )
-    prompter = CLIFakePrompter.new(
-      choices: ['create'],
-      confirms: [false]
+      satisfy { |cmd| cmd.include?('--minimal') }, dry_run: true
     )
 
-    status = described_class.start(
+    status = run_cli(
       ['myapp', '--dry-run', '--rails-version', '8.1.2', '--minimal'],
-      out: StringIO.new,
-      err: StringIO.new,
-      store: store,
-      detector: detector,
-      rails_detector: rails_detector,
-      runner: runner,
-      prompter: prompter
+      store: store, runner: runner,
+      prompter: FakePrompter.new(choices: ['create'], confirms: [false])
     )
-
     expect(status).to eq(0)
-  end
-
-  it 'rejects --delete-preset combined with create actions' do
-    err = StringIO.new
-    status = described_class.start(
-      ['myapp', '--delete-preset', 'old'],
-      out: StringIO.new,
-      err: err,
-      store: instance_double(CreateRailsApp::Config::Store),
-      detector: detector,
-      rails_detector: rails_detector,
-      runner: instance_double(CreateRailsApp::Runner),
-      prompter: CLIFakePrompter.new
-    )
-
-    expect(status).to eq(1)
-    expect(err.string).to include('--delete-preset cannot be combined')
   end
 
   it 'shows series labels for version selection' do
     allow(rails_detector).to receive(:detect).and_return({ '8.1' => '8.1.2' })
 
-    prompter = CLIFakePrompter.new
+    prompter = FakePrompter.new
     all_seen_options = []
     allow(prompter).to receive(:choose) do |_question, options:, **_kwargs|
       all_seen_options << options
@@ -510,16 +266,7 @@ RSpec.describe CreateRailsApp::CLI do
     runner = instance_double(CreateRailsApp::Runner)
     allow(runner).to receive(:run!)
 
-    described_class.start(
-      ['--dry-run'],
-      out: StringIO.new,
-      err: StringIO.new,
-      store: store,
-      detector: detector,
-      rails_detector: rails_detector,
-      runner: runner,
-      prompter: prompter
-    )
+    run_cli(['--dry-run'], store: store, runner: runner, prompter: prompter)
 
     version_options = all_seen_options.first
     expect(version_options).to eq(['Rails 8.1', 'Rails 8.0 (not installed)', 'Rails 7.2 (not installed)'])
@@ -534,20 +281,11 @@ RSpec.describe CreateRailsApp::CLI do
     runner = instance_double(CreateRailsApp::Runner)
     allow(runner).to receive(:run!)
 
-    prompter = CLIFakePrompter.new(
-      choices: ['create'],
-      confirms: [false]
-    )
+    prompter = FakePrompter.new(choices: ['create'], confirms: [false])
 
-    described_class.start(
+    run_cli(
       ['myapp', '--dry-run', '--rails-version', '7.2.0'],
-      out: StringIO.new,
-      err: StringIO.new,
-      store: store,
-      detector: detector,
-      rails_detector: rails_detector,
-      runner: runner,
-      prompter: prompter
+      store: store, runner: runner, prompter: prompter
     )
 
     install_msg = prompter.messages.find { |m| m.include?('gem install rails') }
@@ -555,7 +293,6 @@ RSpec.describe CreateRailsApp::CLI do
   end
 
   it 'raises error when rails detection fails after installation' do
-    # First detect: nothing installed. Second detect (after install): still nothing.
     allow(rails_detector).to receive(:detect).and_return({}, {})
     allow(CLI::UI::Spinner).to receive(:spin).and_yield
 
@@ -564,27 +301,17 @@ RSpec.describe CreateRailsApp::CLI do
     runner = instance_double(CreateRailsApp::Runner)
     allow(runner).to receive(:run!)
 
-    # Interactive: select "Rails 8.1" (no exact version → version_choice.version is nil)
-    prompter = CLIFakePrompter.new(choices: ['Rails 8.1 (not installed)', 'create'], confirms: [false])
     err = StringIO.new
-
-    status = described_class.start(
+    status = run_cli(
       ['myapp'],
-      out: StringIO.new,
-      err: err,
-      store: store,
-      detector: detector,
-      rails_detector: rails_detector,
-      runner: runner,
-      prompter: prompter
+      err: err, store: store, runner: runner,
+      prompter: FakePrompter.new(choices: ['Rails 8.1 (not installed)', 'create'], confirms: [false])
     )
-
     expect(status).to eq(1)
     expect(err.string).to include('Failed to detect Rails')
   end
 
   it 'triggers installation when exact patch version differs from installed' do
-    # 8.1.2 installed, but 8.1.5 requested — exact version mismatch
     allow(rails_detector).to receive(:detect).and_return({ '8.1' => '8.1.2' })
 
     store = instance_double(CreateRailsApp::Config::Store, last_used: {})
@@ -593,49 +320,23 @@ RSpec.describe CreateRailsApp::CLI do
     runner = instance_double(CreateRailsApp::Runner)
 
     expect(runner).to receive(:run!).with(
-      ['gem', 'install', 'rails', '-v', '8.1.5'],
-      dry_run: true
+      ['gem', 'install', 'rails', '-v', '8.1.5'], dry_run: true
     ).ordered
-
     expect(runner).to receive(:run!).with(
-      satisfy { |cmd| cmd.include?('_8.1.5_') && cmd.include?('new') },
-      dry_run: true
+      satisfy { |cmd| cmd.include?('_8.1.5_') && cmd.include?('new') }, dry_run: true
     ).ordered
 
-    prompter = CLIFakePrompter.new(
-      choices: ['create'],
-      confirms: [false]
-    )
-
-    status = described_class.start(
+    status = run_cli(
       ['myapp', '--dry-run', '--rails-version', '8.1.5'],
-      out: StringIO.new,
-      err: StringIO.new,
-      store: store,
-      detector: detector,
-      rails_detector: rails_detector,
-      runner: runner,
-      prompter: prompter
+      store: store, runner: runner,
+      prompter: FakePrompter.new(choices: ['create'], confirms: [false])
     )
-
     expect(status).to eq(0)
   end
 
   it 'rejects single-segment --rails-version' do
     err = StringIO.new
-
-    status = described_class.start(
-      ['myapp', '--rails-version', '8'],
-      out: StringIO.new,
-      err: err,
-      store: instance_double(CreateRailsApp::Config::Store),
-      detector: detector,
-      rails_detector: rails_detector,
-      runner: instance_double(CreateRailsApp::Runner),
-      prompter: CLIFakePrompter.new
-    )
-
-    expect(status).to eq(1)
+    expect(run_cli(['myapp', '--rails-version', '8'], err: err)).to eq(1)
     expect(err.string).to include('major.minor')
   end
 
@@ -647,19 +348,11 @@ RSpec.describe CreateRailsApp::CLI do
     runner = instance_double(CreateRailsApp::Runner)
     allow(runner).to receive(:run!)
 
-    prompter = CLIFakePrompter.new(choices: ['create'], confirms: [false])
-
-    status = described_class.start(
+    status = run_cli(
       ['myapp', '--rails-version', '8.1.2', '--save-preset', 'mypreset'],
-      out: StringIO.new,
-      err: StringIO.new,
-      store: store,
-      detector: detector,
-      rails_detector: rails_detector,
-      runner: runner,
-      prompter: prompter
+      store: store, runner: runner,
+      prompter: FakePrompter.new(choices: ['create'], confirms: [false])
     )
-
     expect(status).to eq(0)
   end
 
@@ -671,20 +364,11 @@ RSpec.describe CreateRailsApp::CLI do
     runner = instance_double(CreateRailsApp::Runner)
     allow(runner).to receive(:run!)
 
-    # confirms: [false] for overwrite prompt, then false for "save as preset?"
-    prompter = CLIFakePrompter.new(choices: ['create'], confirms: [false, false])
-
-    status = described_class.start(
+    status = run_cli(
       ['myapp', '--rails-version', '8.1.2', '--save-preset', 'existing'],
-      out: StringIO.new,
-      err: StringIO.new,
-      store: store,
-      detector: detector,
-      rails_detector: rails_detector,
-      runner: runner,
-      prompter: prompter
+      store: store, runner: runner,
+      prompter: FakePrompter.new(choices: ['create'], confirms: [false, false])
     )
-
     expect(status).to eq(0)
     expect(store).not_to have_received(:save_preset)
   end
@@ -697,64 +381,30 @@ RSpec.describe CreateRailsApp::CLI do
     runner = instance_double(CreateRailsApp::Runner)
     allow(runner).to receive(:run!)
 
-    # confirms: [true] for "save as preset?"
-    prompter = CLIFakePrompter.new(
-      choices: ['create'],
-      confirms: [true],
-      texts: ['newpreset']
-    )
-
-    status = described_class.start(
+    status = run_cli(
       ['myapp', '--rails-version', '8.1.2'],
-      out: StringIO.new,
-      err: StringIO.new,
-      store: store,
-      detector: detector,
-      rails_detector: rails_detector,
-      runner: runner,
-      prompter: prompter
+      store: store, runner: runner,
+      prompter: FakePrompter.new(choices: ['create'], confirms: [true], texts: ['newpreset'])
     )
-
     expect(status).to eq(0)
   end
 
   it 'rejects invalid --save-preset name before running command' do
-    store = instance_double(CreateRailsApp::Config::Store)
     runner = instance_double(CreateRailsApp::Runner)
     expect(runner).not_to receive(:run!)
 
     err = StringIO.new
-
-    status = described_class.start(
+    status = run_cli(
       ['myapp', '--dry-run', '--rails-version', '8.1.2', '--save-preset', '!!!'],
-      out: StringIO.new,
-      err: err,
-      store: store,
-      detector: detector,
-      rails_detector: rails_detector,
-      runner: runner,
-      prompter: CLIFakePrompter.new
+      err: err, runner: runner
     )
-
     expect(status).to eq(1)
     expect(err.string).to include('Invalid preset name')
   end
 
   it 'returns error for invalid --rails-version' do
     err = StringIO.new
-
-    status = described_class.start(
-      ['myapp', '--rails-version', 'not-a-version'],
-      out: StringIO.new,
-      err: err,
-      store: instance_double(CreateRailsApp::Config::Store),
-      detector: detector,
-      rails_detector: rails_detector,
-      runner: instance_double(CreateRailsApp::Runner),
-      prompter: CLIFakePrompter.new
-    )
-
-    expect(status).to eq(1)
+    expect(run_cli(['myapp', '--rails-version', 'not-a-version'], err: err)).to eq(1)
     expect(err.string).to include('Malformed version number string')
   end
 
@@ -764,89 +414,11 @@ RSpec.describe CreateRailsApp::CLI do
     runner = instance_double(CreateRailsApp::Runner)
     allow(runner).to receive(:run!)
 
-    prompter = CLIFakePrompter.new(
-      choices: ['create'],
-      confirms: [false]
-    )
-
-    described_class.start(
+    run_cli(
       ['myapp', '--dry-run', '--rails-version', '8.1.2'],
-      out: StringIO.new,
-      err: StringIO.new,
-      store: store,
-      detector: detector,
-      rails_detector: rails_detector,
-      runner: runner,
-      prompter: prompter
+      store: store, runner: runner,
+      prompter: FakePrompter.new(choices: ['create'], confirms: [false])
     )
-  end
-
-  it 'rejects --dry-run combined with --delete-preset' do
-    err = StringIO.new
-    status = described_class.start(
-      ['--dry-run', '--delete-preset', 'old'],
-      out: StringIO.new,
-      err: err,
-      store: instance_double(CreateRailsApp::Config::Store),
-      detector: detector,
-      rails_detector: rails_detector,
-      runner: instance_double(CreateRailsApp::Runner),
-      prompter: CLIFakePrompter.new
-    )
-
-    expect(status).to eq(1)
-    expect(err.string).to include('--dry-run cannot be combined')
-  end
-
-  it 'rejects --version combined with --dry-run' do
-    err = StringIO.new
-    status = described_class.start(
-      ['--version', '--dry-run'],
-      out: StringIO.new,
-      err: err,
-      store: instance_double(CreateRailsApp::Config::Store),
-      detector: detector,
-      rails_detector: rails_detector,
-      runner: instance_double(CreateRailsApp::Runner),
-      prompter: CLIFakePrompter.new
-    )
-
-    expect(status).to eq(1)
-    expect(err.string).to include('--version cannot be combined')
-  end
-
-  it 'rejects --doctor combined with --dry-run' do
-    err = StringIO.new
-    status = described_class.start(
-      ['--doctor', '--dry-run'],
-      out: StringIO.new,
-      err: err,
-      store: instance_double(CreateRailsApp::Config::Store),
-      detector: detector,
-      rails_detector: rails_detector,
-      runner: instance_double(CreateRailsApp::Runner),
-      prompter: CLIFakePrompter.new
-    )
-
-    expect(status).to eq(1)
-    expect(err.string).to include('--doctor cannot be combined')
-  end
-
-  it 'rejects --dry-run combined with --list-presets' do
-    err = StringIO.new
-    status = described_class.start(
-      ['--dry-run', '--list-presets'],
-      out: StringIO.new,
-      err: err,
-      store: instance_double(CreateRailsApp::Config::Store),
-      detector: detector,
-      rails_detector: rails_detector,
-      runner: instance_double(CreateRailsApp::Runner),
-      prompter: CLIFakePrompter.new
-    )
-
-    expect(status).to eq(1)
-    expect(err.string).to include('--dry-run cannot be combined')
   end
 
   it 'handles app named "new" in summary without error' do
@@ -856,22 +428,11 @@ RSpec.describe CreateRailsApp::CLI do
     runner = instance_double(CreateRailsApp::Runner)
     allow(runner).to receive(:run!)
 
-    prompter = CLIFakePrompter.new(
-      choices: ['create'],
-      confirms: [false]
-    )
-
-    status = described_class.start(
+    status = run_cli(
       ['new', '--dry-run', '--rails-version', '8.1.2'],
-      out: StringIO.new,
-      err: StringIO.new,
-      store: store,
-      detector: detector,
-      rails_detector: rails_detector,
-      runner: runner,
-      prompter: prompter
+      store: store, runner: runner,
+      prompter: FakePrompter.new(choices: ['create'], confirms: [false])
     )
-
     expect(status).to eq(0)
   end
 
@@ -883,23 +444,12 @@ RSpec.describe CreateRailsApp::CLI do
     runner = instance_double(CreateRailsApp::Runner)
     allow(runner).to receive(:run!)
 
-    prompter = CLIFakePrompter.new(
-      choices: ['create'],
-      confirms: [false]
-    )
     err = StringIO.new
-
-    status = described_class.start(
+    status = run_cli(
       ['myapp', '--rails-version', '8.1.2'],
-      out: StringIO.new,
-      err: err,
-      store: store,
-      detector: detector,
-      rails_detector: rails_detector,
-      runner: runner,
-      prompter: prompter
+      err: err, store: store, runner: runner,
+      prompter: FakePrompter.new(choices: ['create'], confirms: [false])
     )
-
     expect(status).to eq(0)
     expect(err.string).to include('Warning:')
   end
@@ -910,25 +460,12 @@ RSpec.describe CreateRailsApp::CLI do
     runner = instance_double(CreateRailsApp::Runner)
     allow(runner).to receive(:run!)
 
-    # confirms: [true] to save preset, text '!!!' is invalid preset name
-    prompter = CLIFakePrompter.new(
-      choices: ['create'],
-      confirms: [true],
-      texts: ['!!!']
-    )
-
     err = StringIO.new
-    status = described_class.start(
+    status = run_cli(
       ['myapp', '--rails-version', '8.1.2'],
-      out: StringIO.new,
-      err: err,
-      store: store,
-      detector: detector,
-      rails_detector: rails_detector,
-      runner: runner,
-      prompter: prompter
+      err: err, store: store, runner: runner,
+      prompter: FakePrompter.new(choices: ['create'], confirms: [true], texts: ['!!!'])
     )
-
     expect(status).to eq(0)
     expect(err.string).to include('Warning:')
   end
@@ -936,7 +473,7 @@ RSpec.describe CreateRailsApp::CLI do
   it 'shows "(not installed)" for uninstalled series' do
     allow(rails_detector).to receive(:detect).and_return({ '8.1' => '8.1.2' })
 
-    prompter = CLIFakePrompter.new
+    prompter = FakePrompter.new
     all_seen_options = []
     allow(prompter).to receive(:choose) do |_question, options:, **_kwargs|
       all_seen_options << options
@@ -952,16 +489,7 @@ RSpec.describe CreateRailsApp::CLI do
     runner = instance_double(CreateRailsApp::Runner)
     allow(runner).to receive(:run!)
 
-    described_class.start(
-      ['--dry-run'],
-      out: StringIO.new,
-      err: StringIO.new,
-      store: store,
-      detector: detector,
-      rails_detector: rails_detector,
-      runner: runner,
-      prompter: prompter
-    )
+    run_cli(['--dry-run'], store: store, runner: runner, prompter: prompter)
 
     version_options = all_seen_options.first
     installed_option = version_options.find { |o| o.include?('8.1') }
@@ -976,18 +504,7 @@ RSpec.describe CreateRailsApp::CLI do
     store = instance_double(CreateRailsApp::Config::Store, last_used: {})
     allow(store).to receive(:preset).with('nope').and_return(nil)
 
-    status = described_class.start(
-      ['myapp', '--preset', 'nope', '--rails-version', '8.1.2'],
-      out: StringIO.new,
-      err: err,
-      store: store,
-      detector: detector,
-      rails_detector: rails_detector,
-      runner: instance_double(CreateRailsApp::Runner),
-      prompter: CLIFakePrompter.new
-    )
-
-    expect(status).to eq(1)
+    expect(run_cli(['myapp', '--preset', 'nope', '--rails-version', '8.1.2'], err: err, store: store)).to eq(1)
     expect(err.string).to include('Preset not found')
   end
 
@@ -998,50 +515,23 @@ RSpec.describe CreateRailsApp::CLI do
     runner = instance_double(CreateRailsApp::Runner)
     allow(runner).to receive(:run!)
 
-    prompter = CLIFakePrompter.new(
-      choices: ['edit again', 'create'],
-      confirms: [false]
-    )
-
-    status = described_class.start(
+    status = run_cli(
       ['myapp', '--dry-run', '--rails-version', '8.1.2'],
-      out: StringIO.new,
-      err: StringIO.new,
-      store: store,
-      detector: detector,
-      rails_detector: rails_detector,
-      runner: runner,
-      prompter: prompter
+      store: store, runner: runner,
+      prompter: FakePrompter.new(choices: ['edit again', 'create'], confirms: [false])
     )
-
     expect(status).to eq(0)
   end
 
   it 'runs --doctor with no rails installed' do
     allow(rails_detector).to receive(:detect).and_return({})
     out = StringIO.new
-
-    status = described_class.start(
-      ['--doctor'],
-      out: out,
-      err: StringIO.new,
-      store: instance_double(CreateRailsApp::Config::Store),
-      detector: detector,
-      rails_detector: rails_detector,
-      runner: instance_double(CreateRailsApp::Runner),
-      prompter: CLIFakePrompter.new
-    )
-
-    expect(status).to eq(0)
+    expect(run_cli(['--doctor'], out: out)).to eq(0)
     expect(out.string).to include('not installed')
   end
 
   it 'selects uninstalled rails version interactively and installs it' do
-    # No rails installed at all
-    allow(rails_detector).to receive(:detect).and_return(
-      {},
-      { '8.1' => '8.1.0' }
-    )
+    allow(rails_detector).to receive(:detect).and_return({}, { '8.1' => '8.1.0' })
     allow(CLI::UI::Spinner).to receive(:spin).and_yield
 
     store = instance_double(CreateRailsApp::Config::Store, last_used: {})
@@ -1050,22 +540,11 @@ RSpec.describe CreateRailsApp::CLI do
     runner = instance_double(CreateRailsApp::Runner)
     allow(runner).to receive(:run!)
 
-    prompter = CLIFakePrompter.new(
-      choices: ['Rails 8.1 (not installed)', 'create'],
-      confirms: [false]
-    )
-
-    status = described_class.start(
+    status = run_cli(
       ['myapp'],
-      out: StringIO.new,
-      err: StringIO.new,
-      store: store,
-      detector: detector,
-      rails_detector: rails_detector,
-      runner: runner,
-      prompter: prompter
+      store: store, runner: runner,
+      prompter: FakePrompter.new(choices: ['Rails 8.1 (not installed)', 'create'], confirms: [false])
     )
-
     expect(status).to eq(0)
     expect(runner).to have_received(:run!).with(
       satisfy { |cmd| cmd.include?('gem') && cmd.include?('install') }
@@ -1078,25 +557,13 @@ RSpec.describe CreateRailsApp::CLI do
     allow(store).to receive(:save_preset)
     runner = instance_double(CreateRailsApp::Runner)
     allow(runner).to receive(:run!)
+
     err = StringIO.new
-
-    prompter = CLIFakePrompter.new(
-      texts: [CreateRailsApp::Wizard::BACK, 'myapp'],
-      choices: ['create'],
-      confirms: [false]
-    )
-
-    status = described_class.start(
+    status = run_cli(
       ['--dry-run', '--rails-version', '8.1.2'],
-      out: StringIO.new,
-      err: err,
-      store: store,
-      detector: detector,
-      rails_detector: rails_detector,
-      runner: runner,
-      prompter: prompter
+      err: err, store: store, runner: runner,
+      prompter: FakePrompter.new(texts: [CreateRailsApp::Wizard::BACK, 'myapp'], choices: ['create'], confirms: [false])
     )
-
     expect(status).to eq(0)
     expect(err.string).to include('Nothing to go back to.')
   end
@@ -1108,46 +575,16 @@ RSpec.describe CreateRailsApp::CLI do
     allow(store).to receive(:save_last_used)
     allow(store).to receive(:save_preset)
     runner = instance_double(CreateRailsApp::Runner)
-    # Should only receive ONE run! call (rails new with installed version), not a gem install
     expect(runner).to receive(:run!).once.with(
-      satisfy { |cmd| cmd.include?('_8.1.5_') && cmd.include?('new') },
-      dry_run: true
+      satisfy { |cmd| cmd.include?('_8.1.5_') && cmd.include?('new') }, dry_run: true
     )
 
-    prompter = CLIFakePrompter.new(
-      choices: ['create'],
-      confirms: [false]
-    )
-
-    status = described_class.start(
+    status = run_cli(
       ['myapp', '--dry-run', '--rails-version', '8.1.2'],
-      out: StringIO.new,
-      err: StringIO.new,
-      store: store,
-      detector: detector,
-      rails_detector: rails_detector,
-      runner: runner,
-      prompter: prompter
+      store: store, runner: runner,
+      prompter: FakePrompter.new(choices: ['create'], confirms: [false])
     )
-
     expect(status).to eq(0)
-  end
-
-  it 'rejects --list-presets combined with --show-preset' do
-    err = StringIO.new
-    status = described_class.start(
-      ['--list-presets', '--show-preset', 'foo'],
-      out: StringIO.new,
-      err: err,
-      store: instance_double(CreateRailsApp::Config::Store),
-      detector: detector,
-      rails_detector: rails_detector,
-      runner: instance_double(CreateRailsApp::Runner),
-      prompter: CLIFakePrompter.new
-    )
-
-    expect(status).to eq(1)
-    expect(err.string).to include('--list-presets and --show-preset cannot be combined')
   end
 
   it 'skips install when --rails-version matches installed (Gem::Version comparison)' do
@@ -1157,28 +594,15 @@ RSpec.describe CreateRailsApp::CLI do
     allow(store).to receive(:save_last_used)
     allow(store).to receive(:save_preset)
     runner = instance_double(CreateRailsApp::Runner)
-    # Should only receive ONE run! call (the rails new), not a gem install
     expect(runner).to receive(:run!).once.with(
-      satisfy { |cmd| cmd.include?('new') && cmd.include?('myapp') },
-      dry_run: true
+      satisfy { |cmd| cmd.include?('new') && cmd.include?('myapp') }, dry_run: true
     )
 
-    prompter = CLIFakePrompter.new(
-      choices: ['create'],
-      confirms: [false]
-    )
-
-    status = described_class.start(
+    status = run_cli(
       ['myapp', '--dry-run', '--rails-version', '8.1'],
-      out: StringIO.new,
-      err: StringIO.new,
-      store: store,
-      detector: detector,
-      rails_detector: rails_detector,
-      runner: runner,
-      prompter: prompter
+      store: store, runner: runner,
+      prompter: FakePrompter.new(choices: ['create'], confirms: [false])
     )
-
     expect(status).to eq(0)
   end
 end

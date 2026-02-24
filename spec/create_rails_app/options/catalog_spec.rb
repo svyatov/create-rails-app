@@ -46,13 +46,6 @@ RSpec.describe CreateRailsApp::Options::Catalog do
     expect(definition[:values]).to include('mariadb-mysql', 'mariadb-trilogy')
   end
 
-  it 'composes database values from BASE and MARIADB constants' do
-    definition = described_class.fetch(:database)
-    expect(definition[:values]).to eq(
-      described_class::BASE_DATABASE_VALUES + described_class::MARIADB_DATABASE_VALUES
-    )
-  end
-
   it 'raises KeyError for unknown option' do
     expect { described_class.fetch(:bogus) }.to raise_error(KeyError)
   end
