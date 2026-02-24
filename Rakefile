@@ -10,12 +10,15 @@ RSpec::Core::RakeTask.new(:spec)
 require 'rubocop/rake_task'
 
 RuboCop::RakeTask.new do |task|
-  task.options = %w[--format progress --parallel --autocorrect]
+  task.options = %w[--format progress --parallel]
 end
 
 Rake::Task['release:rubygem_push'].enhance(['fetch_otp'])
 
 task :fetch_otp do
+  abort 'OTP fetch requires the 1Password CLI (op). Install it or set GEM_HOST_OTP_CODE manually.' \
+    unless system('op', '--version', out: File::NULL, err: File::NULL)
+
   ENV['GEM_HOST_OTP_CODE'] = `op item get "RubyGems" --otp`.strip
 end
 

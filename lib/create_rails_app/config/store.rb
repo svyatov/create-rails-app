@@ -83,8 +83,8 @@ module CreateRailsApp
         raw = load
         {
           'version' => raw.fetch('version', SCHEMA_VERSION),
-          'last_used' => raw.fetch('last_used', nil) || {},
-          'presets' => raw.fetch('presets', nil) || {}
+          'last_used' => (raw['last_used'].is_a?(Hash) ? raw['last_used'] : {}),
+          'presets' => (raw['presets'].is_a?(Hash) ? raw['presets'] : {})
         }
       end
 
@@ -93,8 +93,20 @@ module CreateRailsApp
       def load
         return {} unless File.file?(path)
 
-        YAML.safe_load_file(path, aliases: false) || {}
-      rescue Psych::SyntaxError => e
+        result = YAML.safe_load_file(path, aliases: false)
+        unless result.nil? || result.is_a?(Hash)
+          raise ConfigError, "Invalid config file at #{path}: expected a YAML mapping"
+        end
+
+        version = result&.fetch('version', SCHEMA_VERSION) || SCHEMA_VERSION
+        if version > SCHEMA_VERSION
+          raise ConfigError,
+                "Config file at #{path} has unsupported version #{version} (expected #{SCHEMA_VERSION}). " \
+                'Please upgrade create-rails-app or delete the config file.'
+        end
+
+        result || {}
+      rescue Psych::SyntaxError, Psych::DisallowedClass => e
         raise ConfigError, "Invalid config file at #{path}: #{e.message}"
       end
 
@@ -104,7 +116,7 @@ module CreateRailsApp
         FileUtils.mkdir_p(File.dirname(path))
         Tempfile.create(['create-rails-app', '.yml'], File.dirname(path)) do |tmp|
           tmp.write(YAML.dump(payload))
-          tmp.flush
+          tmp.close
           File.rename(tmp.path, path)
         end
       rescue SystemCallError => e

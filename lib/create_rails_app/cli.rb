@@ -134,11 +134,13 @@ module CreateRailsApp
 
       @runner.run!(command, dry_run: @options[:dry_run])
       unless @options[:dry_run]
-        @store.save_last_used(selected_options)
         begin
+          @store.save_last_used(selected_options)
           save_preset_if_requested(selected_options)
-        rescue ValidationError => e
+        rescue ValidationError, ConfigError => e
           @err.puts("Warning: #{e.message}")
+        rescue Interrupt
+          # user skipped the preset prompt after a successful run — that's fine
         end
       end
       0
@@ -146,7 +148,7 @@ module CreateRailsApp
       @err.puts(e.message)
       1
     rescue Interrupt
-      @err.puts(::CLI::UI.fmt('{{green:See ya!}}'))
+      @err.puts('See ya!')
       130
     end
 
@@ -192,12 +194,14 @@ module CreateRailsApp
         raise ValidationError, '--dry-run cannot be combined with query or delete actions'
       end
 
-      if @options[:doctor] && (query_action || @options[:delete_preset] || conflicting_create_action)
+      if @options[:doctor] &&
+         (query_action || @options[:delete_preset] || @options[:dry_run] || conflicting_create_action)
         raise ValidationError, '--doctor cannot be combined with other actions'
       end
 
       conflicting_action = @options[:doctor] || query_action
       conflicting_action ||= @options[:delete_preset]
+      conflicting_action ||= @options[:dry_run]
       conflicting_action ||= conflicting_create_action
       return unless @options[:version] && conflicting_action
 
@@ -347,7 +351,10 @@ module CreateRailsApp
 
       raise ValidationError, 'App name is required when --preset is provided' if @options[:preset]
 
-      prompter.text('App name:', allow_empty: false)
+      loop do
+        answer = prompter.text('App name:', allow_empty: false)
+        return answer unless answer == Wizard::BACK
+      end
     end
 
     # @return [Hash{Symbol => Object}] preset options

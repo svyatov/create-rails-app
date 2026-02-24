@@ -54,6 +54,8 @@ module CreateRailsApp
       # @return [String]
       def text(question, default: nil, allow_empty: true)
         ::CLI::UI.ask(question, default: default, allow_empty: allow_empty)
+      rescue BackKeyPressed
+        Wizard::BACK
       end
 
       # Prompts for yes/no confirmation.

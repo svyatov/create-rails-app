@@ -798,6 +798,40 @@ RSpec.describe CreateRailsApp::CLI do
     expect(err.string).to include('--dry-run cannot be combined')
   end
 
+  it 'rejects --version combined with --dry-run' do
+    err = StringIO.new
+    status = described_class.start(
+      ['--version', '--dry-run'],
+      out: StringIO.new,
+      err: err,
+      store: instance_double(CreateRailsApp::Config::Store),
+      detector: detector,
+      rails_detector: rails_detector,
+      runner: instance_double(CreateRailsApp::Runner),
+      prompter: CLIFakePrompter.new
+    )
+
+    expect(status).to eq(1)
+    expect(err.string).to include('--version cannot be combined')
+  end
+
+  it 'rejects --doctor combined with --dry-run' do
+    err = StringIO.new
+    status = described_class.start(
+      ['--doctor', '--dry-run'],
+      out: StringIO.new,
+      err: err,
+      store: instance_double(CreateRailsApp::Config::Store),
+      detector: detector,
+      rails_detector: rails_detector,
+      runner: instance_double(CreateRailsApp::Runner),
+      prompter: CLIFakePrompter.new
+    )
+
+    expect(status).to eq(1)
+    expect(err.string).to include('--doctor cannot be combined')
+  end
+
   it 'rejects --dry-run combined with --list-presets' do
     err = StringIO.new
     status = described_class.start(
@@ -839,6 +873,35 @@ RSpec.describe CreateRailsApp::CLI do
     )
 
     expect(status).to eq(0)
+  end
+
+  it 'returns exit 0 when config write fails after successful creation' do
+    store = instance_double(CreateRailsApp::Config::Store, last_used: {})
+    allow(store).to receive(:save_last_used).and_raise(
+      CreateRailsApp::ConfigError, 'Failed to write config'
+    )
+    runner = instance_double(CreateRailsApp::Runner)
+    allow(runner).to receive(:run!)
+
+    prompter = CLIFakePrompter.new(
+      choices: ['create'],
+      confirms: [false]
+    )
+    err = StringIO.new
+
+    status = described_class.start(
+      ['myapp', '--rails-version', '8.1.2'],
+      out: StringIO.new,
+      err: err,
+      store: store,
+      detector: detector,
+      rails_detector: rails_detector,
+      runner: runner,
+      prompter: prompter
+    )
+
+    expect(status).to eq(0)
+    expect(err.string).to include('Warning:')
   end
 
   it 'returns exit 0 when preset save fails after successful creation' do

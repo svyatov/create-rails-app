@@ -235,13 +235,14 @@ RSpec.describe CreateRailsApp::Wizard do
     expect(result).not_to have_key(:database)
   end
 
-  it 'auto-skips javascript, css, hotwire, jbuilder when api is true' do
+  it 'auto-skips javascript, css, asset_pipeline, hotwire, jbuilder, action_text when api is true' do
     entry = CreateRailsApp::Compatibility::Matrix::Entry.new(
       requirement: Gem::Requirement.new('>= 0'),
       supported_options: {
         api: nil,
         javascript: %w[importmap bun],
         css: %w[tailwind bootstrap],
+        asset_pipeline: %w[propshaft sprockets],
         hotwire: nil,
         jbuilder: nil,
         action_text: nil
@@ -258,6 +259,35 @@ RSpec.describe CreateRailsApp::Wizard do
     # Only one question asked (api)
     expect(prompter.seen_questions.length).to eq(1)
     expect(result[:api]).to be(true)
+    expect(result).not_to have_key(:asset_pipeline)
+  end
+
+  it 'auto-skips active_storage, action_mailbox, action_text when active_record is false' do
+    entry = CreateRailsApp::Compatibility::Matrix::Entry.new(
+      requirement: Gem::Requirement.new('>= 0'),
+      supported_options: {
+        active_record: nil,
+        database: %w[sqlite3 postgresql],
+        action_mailbox: nil,
+        active_storage: nil,
+        action_text: nil
+      }
+    )
+    prompter = WizardFakePrompter.new(choices: %w[skip])
+
+    result = described_class.new(
+      compatibility_entry: entry,
+      defaults: {},
+      prompter: prompter
+    ).run
+
+    # Only one question asked (active_record), everything else auto-skipped
+    expect(prompter.seen_questions.length).to eq(1)
+    expect(result[:active_record]).to be(false)
+    expect(result).not_to have_key(:database)
+    expect(result).not_to have_key(:action_mailbox)
+    expect(result).not_to have_key(:active_storage)
+    expect(result).not_to have_key(:action_text)
   end
 
   it 'auto-skips system_test when test is false' do

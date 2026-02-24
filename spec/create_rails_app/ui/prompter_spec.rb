@@ -40,4 +40,12 @@ RSpec.describe CreateRailsApp::UI::Prompter do
 
     expect(prompter.confirm('Sure?')).to be(true)
   end
+
+  it '#text maps Ctrl+B signal to back token' do
+    described_class.setup!
+    prompter = described_class.new(out: StringIO.new)
+    allow(CLI::UI).to receive(:ask).and_raise(CreateRailsApp::UI::BackKeyPressed)
+
+    expect(prompter.text('Name:')).to eq(CreateRailsApp::Wizard::BACK)
+  end
 end

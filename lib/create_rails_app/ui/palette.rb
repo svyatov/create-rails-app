@@ -78,7 +78,7 @@ module CreateRailsApp
 
         term = @env.fetch('TERM', '')
         colorterm = @env.fetch('COLORTERM', '')
-        term.include?('256color') || colorterm.match?(/truecolor|24bit|256/i)
+        term.include?('256color') || colorterm.match?(/truecolor|24bit/i)
       end
     end
   end

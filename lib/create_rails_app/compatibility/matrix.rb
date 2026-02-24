@@ -35,7 +35,7 @@ module CreateRailsApp
         # @param option_key [Symbol, String]
         # @return [Array<String>, nil] allowed values, or nil for skips/flags
         def allowed_values(option_key)
-          supported_options.fetch(option_key.to_sym)
+          supported_options[option_key.to_sym]
         end
       end
 
@@ -45,12 +45,13 @@ module CreateRailsApp
       SUPPORTED_SERIES = %w[7.2 8.0 8.1].freeze
 
       # Options shared across all supported Rails versions.
+      # Enum values are derived from Catalog::DEFINITIONS to prevent drift.
       COMMON_OPTIONS = {
         api: nil,
-        database: %w[sqlite3 postgresql mysql trilogy],
-        javascript: %w[importmap bun webpack esbuild rollup],
-        css: %w[tailwind bootstrap bulma postcss sass],
-        asset_pipeline: %w[propshaft sprockets],
+        database: Options::Catalog::DEFINITIONS[:database][:values],
+        javascript: Options::Catalog::DEFINITIONS[:javascript][:values],
+        css: Options::Catalog::DEFINITIONS[:css][:values],
+        asset_pipeline: Options::Catalog::DEFINITIONS[:asset_pipeline][:values],
         active_record: nil,
         action_mailer: nil,
         action_mailbox: nil,

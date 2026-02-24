@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'open3'
+
 module CreateRailsApp
   module Detection
     # Detects locally installed Rails versions using +gem list+.
@@ -28,8 +30,8 @@ module CreateRailsApp
 
       # @return [Array<Gem::Version>] all installed Rails versions, sorted descending
       def installed_versions
-        output = IO.popen([@gem_command, 'list', 'rails', '--local', '--exact'], err: %i[child out], &:read)
-        return [] if $CHILD_STATUS && !$CHILD_STATUS.success?
+        output, status = Open3.capture2e(@gem_command, 'list', 'rails', '--local', '--exact')
+        return [] unless status.success?
 
         rails_line = output.lines.find { |line| line.match?(/\Arails\s/) }
         return [] unless rails_line

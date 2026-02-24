@@ -69,4 +69,26 @@ RSpec.describe CreateRailsApp::Config::Store do
       bad_store.save_last_used(database: 'postgresql')
     end.to raise_error(CreateRailsApp::ConfigError, /Failed to write config/)
   end
+
+  it 'raises ConfigError on non-Hash YAML root' do
+    File.write(config_path, "---\n- item1\n- item2\n")
+    expect { store.last_used }.to raise_error(CreateRailsApp::ConfigError, /expected a YAML mapping/)
+  end
+
+  it 'raises ConfigError when YAML contains disallowed classes' do
+    File.write(config_path, "--- !ruby/object:OpenStruct\ntable:\n  foo: bar\n")
+    expect { store.last_used }.to raise_error(CreateRailsApp::ConfigError, /Invalid config file/)
+  end
+
+  it 'handles non-Hash last_used value gracefully' do
+    File.write(config_path, YAML.dump('version' => 1, 'last_used' => 'oops', 'presets' => [1, 2]))
+
+    expect(store.last_used).to eq({})
+    expect(store.preset_names).to eq([])
+  end
+
+  it 'raises ConfigError when config version is newer than supported' do
+    File.write(config_path, YAML.dump('version' => 999, 'last_used' => {}, 'presets' => {}))
+    expect { store.last_used }.to raise_error(CreateRailsApp::ConfigError, /unsupported version 999/)
+  end
 end

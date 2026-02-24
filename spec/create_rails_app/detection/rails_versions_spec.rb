@@ -3,9 +3,14 @@
 require 'spec_helper'
 
 RSpec.describe CreateRailsApp::Detection::RailsVersions do
+  def stub_gem_list(output, success: true)
+    status = instance_double(Process::Status, success?: success)
+    allow(Open3).to receive(:capture2e).and_return([output, status])
+  end
+
   it 'parses installed versions from gem list output' do
     detector = described_class.new
-    allow(IO).to receive(:popen).and_return("rails (8.1.2, 8.0.7, 7.2.3)\n")
+    stub_gem_list("rails (8.1.2, 8.0.7, 7.2.3)\n")
 
     result = detector.detect
 
@@ -16,7 +21,7 @@ RSpec.describe CreateRailsApp::Detection::RailsVersions do
 
   it 'returns only supported series' do
     detector = described_class.new
-    allow(IO).to receive(:popen).and_return("rails (6.1.7, 8.0.3)\n")
+    stub_gem_list("rails (6.1.7, 8.0.3)\n")
 
     result = detector.detect
 
@@ -26,21 +31,21 @@ RSpec.describe CreateRailsApp::Detection::RailsVersions do
 
   it 'returns empty hash when no rails installed' do
     detector = described_class.new
-    allow(IO).to receive(:popen).and_return('')
+    stub_gem_list('')
 
     expect(detector.detect).to eq({})
   end
 
   it 'returns empty hash when gem command not found' do
     detector = described_class.new(gem_command: 'nonexistent_gem_binary')
-    allow(IO).to receive(:popen).and_raise(Errno::ENOENT)
+    allow(Open3).to receive(:capture2e).and_raise(Errno::ENOENT)
 
     expect(detector.detect).to eq({})
   end
 
   it 'picks latest patch version per series' do
     detector = described_class.new
-    allow(IO).to receive(:popen).and_return("rails (8.0.1, 8.0.5, 8.0.3)\n")
+    stub_gem_list("rails (8.0.1, 8.0.5, 8.0.3)\n")
 
     result = detector.detect
 
@@ -49,16 +54,14 @@ RSpec.describe CreateRailsApp::Detection::RailsVersions do
 
   it 'returns empty hash on permission error' do
     detector = described_class.new
-    allow(IO).to receive(:popen).and_raise(Errno::EACCES)
+    allow(Open3).to receive(:capture2e).and_raise(Errno::EACCES)
 
     expect(detector.detect).to eq({})
   end
 
   it 'only matches rails gem line, not railties or other gems' do
     detector = described_class.new
-    allow(IO).to receive(:popen).and_return(
-      "railties (8.1.2, 8.0.7)\nrails (8.0.5)\nrails-html-sanitizer (1.6.0)\n"
-    )
+    stub_gem_list("railties (8.1.2, 8.0.7)\nrails (8.0.5)\nrails-html-sanitizer (1.6.0)\n")
 
     result = detector.detect
 
@@ -68,10 +71,7 @@ RSpec.describe CreateRailsApp::Detection::RailsVersions do
 
   it 'returns empty hash on non-zero exit from gem list' do
     detector = described_class.new
-    allow(IO).to receive(:popen) do |*_args, **_kwargs, &_block|
-      `exit 1` # sets $CHILD_STATUS to a failed status
-      "ERROR: something went wrong\n"
-    end
+    stub_gem_list("ERROR: something went wrong\n", success: false)
 
     expect(detector.detect).to eq({})
   end

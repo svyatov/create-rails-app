@@ -119,9 +119,12 @@ module CreateRailsApp
       database: ->(values) { values[:active_record] == false },
       javascript: ->(values) { values[:api] == true },
       css: ->(values) { values[:api] == true },
+      asset_pipeline: ->(values) { values[:api] == true },
       hotwire: ->(values) { values[:api] == true },
       jbuilder: ->(values) { values[:api] == true },
-      action_text: ->(values) { values[:api] == true },
+      action_mailbox: ->(values) { values[:active_record] == false },
+      action_text: ->(values) { values[:api] == true || values[:active_record] == false },
+      active_storage: ->(values) { values[:active_record] == false },
       system_test: ->(values) { values[:test] == false || values[:api] == true }
     }.freeze
 
