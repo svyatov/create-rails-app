@@ -33,9 +33,10 @@ module CreateRailsApp
         javascript: { type: :enum, flag: '--javascript', none: '--skip-javascript',
                       values: %w[importmap bun webpack esbuild rollup].freeze }.freeze,
         css: { type: :enum, flag: '--css', none: '--skip-css',
-               values: %w[tailwind bootstrap bulma postcss sass].freeze }.freeze,
+               values: %w[tailwind bootstrap bulma postcss sass].freeze,
+               rails_default: 'none' }.freeze,
         asset_pipeline: { type: :enum, flag: '--asset-pipeline', none: '--skip-asset-pipeline',
-                          values: %w[propshaft sprockets].freeze }.freeze,
+                          values: %w[sprockets propshaft].freeze }.freeze,
         # Skip (included by default, --skip-X to exclude)
         active_record: { type: :skip, skip_flag: '--skip-active-record' }.freeze,
         action_mailer: { type: :skip, skip_flag: '--skip-action-mailer' }.freeze,

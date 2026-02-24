@@ -32,7 +32,7 @@ RSpec.describe CreateRailsApp::Options::Catalog do
     expect(definition[:type]).to eq(:enum)
     expect(definition[:flag]).to eq('--asset-pipeline')
     expect(definition[:none]).to eq('--skip-asset-pipeline')
-    expect(definition[:values]).to eq(%w[propshaft sprockets])
+    expect(definition[:values]).to eq(%w[sprockets propshaft])
   end
 
   it 'defines bundler_audit as a skip type' do

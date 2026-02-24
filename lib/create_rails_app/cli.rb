@@ -336,7 +336,7 @@ module CreateRailsApp
         return version_choice.version
       end
 
-      spin("Installing Rails #{version_choice.version || version_choice.series}") do
+      ::CLI::UI::Spinner.spin("Installing Rails #{version_choice.version || version_choice.series}") do
         @runner.run!(install_command)
       end
 
@@ -513,15 +513,6 @@ module CreateRailsApp
         UI::Prompter.setup!
         UI::Prompter.new(out: @out)
       end
-    end
-
-    # Wrapper for CLI::UI::Spinner — easy to stub in tests.
-    #
-    # @param title [String]
-    # @yield block to run with spinner
-    # @return [void]
-    def spin(title, &)
-      ::CLI::UI::Spinner.spin(title, &)
     end
   end
 end

@@ -92,7 +92,9 @@ RSpec.describe CreateRailsApp::CLI do
     %w[--version --dry-run] => '--version cannot be combined',
     %w[--doctor --dry-run] => '--doctor cannot be combined',
     %w[--dry-run --list-presets] => '--dry-run cannot be combined',
-    %w[--list-presets --show-preset foo] => '--list-presets and --show-preset cannot be combined'
+    %w[--list-presets --show-preset foo] => '--list-presets and --show-preset cannot be combined',
+    %w[--list-presets --preset fast myapp] => 'Preset query options cannot be combined',
+    %w[--show-preset foo --save-preset bar myapp] => 'Preset query options cannot be combined'
   }.each do |argv, msg|
     it "rejects #{argv.join(' ')}" do
       err = StringIO.new

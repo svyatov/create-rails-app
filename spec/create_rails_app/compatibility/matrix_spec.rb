@@ -46,7 +46,7 @@ RSpec.describe CreateRailsApp::Compatibility::Matrix do
 
     it 'provides asset_pipeline enum values for Rails 7.2' do
       entry = described_class.for('7.2.0')
-      expect(entry.allowed_values(:asset_pipeline)).to eq(%w[propshaft sprockets])
+      expect(entry.allowed_values(:asset_pipeline)).to eq(%w[sprockets propshaft])
     end
 
     it 'provides nil asset_pipeline (skip-only) for Rails 8.0+' do

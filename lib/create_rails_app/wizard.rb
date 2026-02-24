@@ -259,7 +259,8 @@ module CreateRailsApp
       choices << 'none' if definition[:none]
       current = @values[key]
       selected = enum_selected_choice(current, choices)
-      answer = choose_with_default_marker(question, key:, choices:, rails_default: choices.first, selected:)
+      rails_default = definition[:rails_default] || choices.first
+      answer = choose_with_default_marker(question, key:, choices:, rails_default:, selected:)
       return BACK if answer == BACK
       return false if answer == 'none'
 
@@ -293,6 +294,7 @@ module CreateRailsApp
     # @return [String]
     def enum_selected_choice(current, choices)
       return 'none' if current == false && choices.include?('none')
+      return choices.first if current == true
       return current if current.is_a?(String) && choices.include?(current)
 
       choices.first
