@@ -452,8 +452,7 @@ module CreateRailsApp
           prompter.say("#{palette.color(:summary_label, 'Install:')} #{palette.color(:install_cmd, install_line)}")
         end
 
-        command_line = "#{palette.color(:command_base, 'rails new')} "
-        command_line += palette.color(:command_app, app_name)
+        command_line = "#{palette.color(:command_base, 'rails new')} #{palette.color(:command_app, app_name)}"
         unless args.empty?
           formatted = args.map do |arg|
             next palette.color(:arg_value, arg) unless arg.start_with?('--')

@@ -87,6 +87,11 @@ RSpec.describe CreateRailsApp::Config::Store do
     expect(store.preset_names).to eq([])
   end
 
+  it 'raises ConfigError when config version is not an integer' do
+    File.write(config_path, YAML.dump('version' => 'abc'))
+    expect { store.last_used }.to raise_error(CreateRailsApp::ConfigError, /expected integer/)
+  end
+
   it 'raises ConfigError when config version is newer than supported' do
     File.write(config_path, YAML.dump('version' => 999, 'last_used' => {}, 'presets' => {}))
     expect { store.last_used }.to raise_error(CreateRailsApp::ConfigError, /unsupported version 999/)

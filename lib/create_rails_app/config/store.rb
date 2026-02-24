@@ -99,6 +99,10 @@ module CreateRailsApp
         end
 
         version = result&.fetch('version', SCHEMA_VERSION) || SCHEMA_VERSION
+        unless version.is_a?(Integer)
+          raise ConfigError, "Invalid config version at #{path}: expected integer, got #{version.inspect}"
+        end
+
         if version > SCHEMA_VERSION
           raise ConfigError,
                 "Config file at #{path} has unsupported version #{version} (expected #{SCHEMA_VERSION}). " \
