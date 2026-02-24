@@ -5,9 +5,10 @@ module CreateRailsApp
   # +rails new+ command array.
   #
   # @example
-  #   entry = Compatibility::Matrix.for('8.1.0')
-  #   builder = CommandBuilder.new(compatibility_entry: entry)
-  #   builder.build(app_name: 'myapp', rails_version: '8.1.2', options: { api: true, database: 'postgresql' })
+  #   CommandBuilder.new.build(
+  #     app_name: 'myapp', rails_version: '8.1.2',
+  #     options: { api: true, database: 'postgresql' }
+  #   )
   #   #=> ['rails', '_8.1.2_', 'new', 'myapp', '--api', '--database=postgresql']
   class CommandBuilder
     # Builds the +rails new+ command array.

@@ -123,7 +123,11 @@ module CreateRailsApp
         tmp.close
         File.rename(tmp.path, path)
       rescue SystemCallError => e
-        File.unlink(tmp.path) if tmp&.path && File.exist?(tmp.path)
+        begin
+          File.unlink(tmp.path) if tmp&.path && File.exist?(tmp.path)
+        rescue SystemCallError # :nocov:
+          nil
+        end
         raise ConfigError, "Failed to write config to #{path}: #{e.message}"
       end
 

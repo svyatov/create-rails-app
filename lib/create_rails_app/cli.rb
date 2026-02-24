@@ -97,7 +97,6 @@ module CreateRailsApp
       version_choice = resolve_rails_version!(installed_rails)
       compatibility_entry = Compatibility::Matrix.for(version_choice.version || "#{version_choice.series}.0")
       builder = CommandBuilder.new
-      last_used = @store.last_used.transform_keys(&:to_sym)
 
       app_name = resolve_app_name!
       selected_options =
@@ -108,7 +107,7 @@ module CreateRailsApp
             app_name: app_name,
             builder: builder,
             compatibility_entry: compatibility_entry,
-            last_used: last_used,
+            last_used: @store.last_used,
             runtime_versions: runtime_versions,
             version_choice: version_choice
           )
