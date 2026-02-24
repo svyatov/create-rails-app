@@ -296,16 +296,16 @@ RSpec.describe CreateRailsApp::Wizard do
     expect(ap_options.any? { |opt| opt.include?('sprockets') }).to be(true)
   end
 
-  it 'presents asset_pipeline as enum for Rails 8.0+' do
-    entry = build_entry(asset_pipeline: %w[propshaft sprockets])
-    prompter = FakePrompter.new(choices: %w[propshaft])
+  it 'presents asset_pipeline as include/skip for Rails 8.0+' do
+    entry = build_entry(asset_pipeline: nil)
+    prompter = FakePrompter.new(choices: %w[skip])
 
     result = described_class.new(compatibility_entry: entry, defaults: {}, prompter: prompter).run
 
-    expect(result[:asset_pipeline]).to eq('propshaft')
+    expect(result[:asset_pipeline]).to be(false)
     ap_options = prompter.seen_options.first
-    expect(ap_options.any? { |opt| opt.include?('propshaft') }).to be(true)
-    expect(ap_options.any? { |opt| opt.include?('sprockets') }).to be(true)
+    expect(ap_options.any? { |opt| opt.include?('include') }).to be(true)
+    expect(ap_options.any? { |opt| opt.include?('skip') }).to be(true)
   end
 
   it 'presents bundler_audit step for Rails 8.1' do

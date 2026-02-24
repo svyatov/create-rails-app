@@ -79,7 +79,7 @@ module CreateRailsApp
         thruster: nil,
         solid: nil,
         database: Options::Catalog::DEFINITIONS[:database][:values],
-        asset_pipeline: Options::Catalog::DEFINITIONS[:asset_pipeline][:values]
+        asset_pipeline: nil
       }.freeze
 
       # Options added in Rails 8.1+.

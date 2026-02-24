@@ -163,7 +163,7 @@ module CreateRailsApp
       @err.puts(e.message)
       1
     rescue Interrupt
-      @err.puts('See ya!')
+      @err.puts(palette.color(:exit_message, 'See ya!'))
       130
     end
 
@@ -472,19 +472,57 @@ module CreateRailsApp
           prompter.say("#{palette.color(:summary_label, 'Install:')} #{palette.color(:install_cmd, install_line)}")
         end
 
-        command_line = "#{palette.color(:command_base, 'rails new')} #{palette.color(:command_app, app_name)}"
-        unless args.empty?
-          formatted = args.map do |arg|
-            next palette.color(:arg_value, arg) unless arg.start_with?('--')
-            next palette.color(:arg_name, arg) unless arg.include?('=')
+        prefix = "#{palette.color(:command_base, 'rails new')} #{palette.color(:command_app, app_name)}"
+        formatted = args.map do |arg|
+          next palette.color(:arg_value, arg) unless arg.start_with?('--')
+          next palette.color(:arg_name, arg) unless arg.include?('=')
 
-            name, value = arg.split('=', 2)
-            "#{palette.color(:arg_name, name)}#{palette.color(:arg_eq, '=')}#{palette.color(:arg_value, value)}"
-          end
-          command_line += " #{formatted.join(' ')}"
+          name, value = arg.split('=', 2)
+          "#{palette.color(:arg_name, name)}#{palette.color(:arg_eq, '=')}#{palette.color(:arg_value, value)}"
         end
-        prompter.say("#{palette.color(:summary_label, 'Command:')} #{command_line}")
+        wrap_command_lines("#{palette.color(:summary_label, 'Command:')} #{prefix}", formatted).each do |line|
+          prompter.say(line)
+        end
       end
+    end
+
+    # @param str [String]
+    # @return [String] text with ANSI escape codes removed
+    def strip_ansi(str)
+      str.gsub(/\e\[[0-9;]*m/, '')
+    end
+
+    # @return [Integer]
+    def terminal_width
+      ::CLI::UI::Terminal.width
+    end
+
+    # Wraps a command across multiple lines if it exceeds terminal width.
+    #
+    # @param prefix [String] colored prefix (e.g. "Command: rails new APP")
+    # @param formatted_args [Array<String>] colored argument strings
+    # @return [Array<String>] lines to emit
+    def wrap_command_lines(prefix, formatted_args)
+      return [prefix] if formatted_args.empty?
+
+      full = "#{prefix} #{formatted_args.join(' ')}"
+      # Frame borders consume ~4 chars
+      max_width = terminal_width - 4
+      return [full] if strip_ansi(full).length <= max_width
+
+      lines = ["#{prefix} \\"]
+      current = '  '
+      formatted_args.each_with_index do |arg, i|
+        candidate = current == '  ' ? "#{current}#{arg}" : "#{current} #{arg}"
+        if strip_ansi(candidate).length > max_width && current != '  '
+          lines << "#{current} \\"
+          current = "  #{arg}"
+        else
+          current = candidate
+        end
+        lines << current if i == formatted_args.length - 1
+      end
+      lines
     end
 
     # @param selected_options [Hash{Symbol => Object}]
