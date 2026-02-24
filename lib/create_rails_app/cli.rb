@@ -92,7 +92,7 @@ module CreateRailsApp
 
       validate_preset_name!(@options[:save_preset]) if @options[:save_preset]
 
-      runtime_versions = @detector.detect!
+      runtime_versions = @detector.detect
       installed_rails = @rails_detector.detect
       version_choice = resolve_rails_version!(installed_rails)
       compatibility_entry = Compatibility::Matrix.for(version_choice.version || "#{version_choice.series}.0")
@@ -220,7 +220,7 @@ module CreateRailsApp
     #
     # @return [Integer] exit code
     def doctor
-      runtime_versions = @detector.detect!
+      runtime_versions = @detector.detect
       @out.puts("ruby: #{runtime_versions.ruby}")
       @out.puts("rubygems: #{runtime_versions.rubygems}")
       installed_rails = @rails_detector.detect
@@ -277,7 +277,7 @@ module CreateRailsApp
 
         series = "#{v.segments[0]}.#{v.segments[1]}"
         Compatibility::Matrix.for(version)
-        return VersionChoice.new(version: version, series: series, needs_install: !installed_rails.key?(series))
+        return VersionChoice.new(version: version, series: series, needs_install: installed_rails[series] != version)
       end
 
       choices = build_version_choices(installed_rails)

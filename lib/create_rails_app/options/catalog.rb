@@ -22,7 +22,7 @@ module CreateRailsApp
         # Flags (opt-in)
         api: { type: :flag, on: '--api' },
         # Enums
-        database: { type: :enum, flag: '--database', none: '--skip-active-record',
+        database: { type: :enum, flag: '--database',
                     values: %w[sqlite3 postgresql mysql trilogy] },
         javascript: { type: :enum, flag: '--javascript', none: '--skip-javascript',
                       values: %w[importmap bun webpack esbuild rollup] },

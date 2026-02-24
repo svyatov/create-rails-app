@@ -264,8 +264,8 @@ module CreateRailsApp
     # @param hash [Hash]
     # @return [Hash{Symbol => Object}]
     def sanitize_defaults(hash)
-      symbolize_keys(hash)
-        .select { |key, _| @compatibility_entry.supports_option?(key) }
+      hash.transform_keys(&:to_sym)
+          .select { |key, _| @compatibility_entry.supports_option?(key) }
     end
 
     # Resolves which enum choice to pre-select based on the user's last pick.
@@ -325,12 +325,6 @@ module CreateRailsApp
       label = "#{label} - #{hint}" if hint
       label = "#{label} (default)" if choice == rails_default
       label
-    end
-
-    # @param hash [Hash]
-    # @return [Hash{Symbol => Object}]
-    def symbolize_keys(hash)
-      hash.transform_keys(&:to_sym)
     end
   end
 end

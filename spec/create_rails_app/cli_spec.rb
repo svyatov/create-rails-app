@@ -52,7 +52,7 @@ RSpec.describe CreateRailsApp::CLI do
   end
 
   before do
-    allow(detector).to receive(:detect!).and_return(runtime_info)
+    allow(detector).to receive(:detect).and_return(runtime_info)
     allow(rails_detector).to receive(:detect).and_return({ '8.1' => '8.1.2' })
   end
 
@@ -249,7 +249,7 @@ RSpec.describe CreateRailsApp::CLI do
     allow(store).to receive(:save_preset)
     runner = instance_double(CreateRailsApp::Runner)
     expect(runner).to receive(:run!).with(
-      satisfy { |cmd| cmd.first(4) == %w[rails _8.1.0_ new myapp] },
+      satisfy { |cmd| cmd.first(4) == %w[rails _8.1.2_ new myapp] },
       dry_run: true
     )
 
@@ -259,7 +259,7 @@ RSpec.describe CreateRailsApp::CLI do
     )
 
     status = described_class.start(
-      ['myapp', '--dry-run', '--rails-version', '8.1.0'],
+      ['myapp', '--dry-run', '--rails-version', '8.1.2'],
       out: StringIO.new,
       err: StringIO.new,
       store: store,
@@ -363,7 +363,7 @@ RSpec.describe CreateRailsApp::CLI do
     allow(runner).to receive(:run!)
 
     status = described_class.start(
-      ['myapp', '--preset', 'fast', '--dry-run', '--rails-version', '8.1.0'],
+      ['myapp', '--preset', 'fast', '--dry-run', '--rails-version', '8.1.2'],
       out: StringIO.new,
       err: StringIO.new,
       store: store,
@@ -381,7 +381,7 @@ RSpec.describe CreateRailsApp::CLI do
     store = instance_double(CreateRailsApp::Config::Store, last_used: {})
 
     status = described_class.start(
-      ['--preset', 'fast', '--rails-version', '8.1.0'],
+      ['--preset', 'fast', '--rails-version', '8.1.2'],
       out: StringIO.new,
       err: err,
       store: store,
@@ -403,7 +403,7 @@ RSpec.describe CreateRailsApp::CLI do
 
     err = StringIO.new
     status = described_class.start(
-      ['myapp', '--rails-version', '8.1.0'],
+      ['myapp', '--rails-version', '8.1.2'],
       out: StringIO.new,
       err: err,
       store: store,
@@ -433,7 +433,7 @@ RSpec.describe CreateRailsApp::CLI do
     )
 
     status = described_class.start(
-      ['--dry-run', '--rails-version', '8.1.0'],
+      ['--dry-run', '--rails-version', '8.1.2'],
       out: StringIO.new,
       err: StringIO.new,
       store: store,
@@ -461,7 +461,7 @@ RSpec.describe CreateRailsApp::CLI do
     )
 
     status = described_class.start(
-      ['myapp', '--dry-run', '--rails-version', '8.1.0', '--minimal'],
+      ['myapp', '--dry-run', '--rails-version', '8.1.2', '--minimal'],
       out: StringIO.new,
       err: StringIO.new,
       store: store,
@@ -583,6 +583,44 @@ RSpec.describe CreateRailsApp::CLI do
     expect(err.string).to include('Failed to detect Rails')
   end
 
+  it 'triggers installation when exact patch version differs from installed' do
+    # 8.1.2 installed, but 8.1.5 requested — exact version mismatch
+    allow(rails_detector).to receive(:detect).and_return({ '8.1' => '8.1.2' })
+
+    store = instance_double(CreateRailsApp::Config::Store, last_used: {})
+    allow(store).to receive(:save_last_used)
+    allow(store).to receive(:save_preset)
+    runner = instance_double(CreateRailsApp::Runner)
+
+    expect(runner).to receive(:run!).with(
+      ['gem', 'install', 'rails', '-v', '8.1.5'],
+      dry_run: true
+    ).ordered
+
+    expect(runner).to receive(:run!).with(
+      satisfy { |cmd| cmd.include?('_8.1.5_') && cmd.include?('new') },
+      dry_run: true
+    ).ordered
+
+    prompter = CLIFakePrompter.new(
+      choices: ['create'],
+      confirms: [false]
+    )
+
+    status = described_class.start(
+      ['myapp', '--dry-run', '--rails-version', '8.1.5'],
+      out: StringIO.new,
+      err: StringIO.new,
+      store: store,
+      detector: detector,
+      rails_detector: rails_detector,
+      runner: runner,
+      prompter: prompter
+    )
+
+    expect(status).to eq(0)
+  end
+
   it 'rejects single-segment --rails-version' do
     err = StringIO.new
 
@@ -612,7 +650,7 @@ RSpec.describe CreateRailsApp::CLI do
     prompter = CLIFakePrompter.new(choices: ['create'], confirms: [false])
 
     status = described_class.start(
-      ['myapp', '--rails-version', '8.1.0', '--save-preset', 'mypreset'],
+      ['myapp', '--rails-version', '8.1.2', '--save-preset', 'mypreset'],
       out: StringIO.new,
       err: StringIO.new,
       store: store,
@@ -637,7 +675,7 @@ RSpec.describe CreateRailsApp::CLI do
     prompter = CLIFakePrompter.new(choices: ['create'], confirms: [false, false])
 
     status = described_class.start(
-      ['myapp', '--rails-version', '8.1.0', '--save-preset', 'existing'],
+      ['myapp', '--rails-version', '8.1.2', '--save-preset', 'existing'],
       out: StringIO.new,
       err: StringIO.new,
       store: store,
@@ -667,7 +705,7 @@ RSpec.describe CreateRailsApp::CLI do
     )
 
     status = described_class.start(
-      ['myapp', '--rails-version', '8.1.0'],
+      ['myapp', '--rails-version', '8.1.2'],
       out: StringIO.new,
       err: StringIO.new,
       store: store,
@@ -688,7 +726,7 @@ RSpec.describe CreateRailsApp::CLI do
     err = StringIO.new
 
     status = described_class.start(
-      ['myapp', '--dry-run', '--rails-version', '8.1.0', '--save-preset', '!!!'],
+      ['myapp', '--dry-run', '--rails-version', '8.1.2', '--save-preset', '!!!'],
       out: StringIO.new,
       err: err,
       store: store,
@@ -732,7 +770,7 @@ RSpec.describe CreateRailsApp::CLI do
     )
 
     described_class.start(
-      ['myapp', '--dry-run', '--rails-version', '8.1.0'],
+      ['myapp', '--dry-run', '--rails-version', '8.1.2'],
       out: StringIO.new,
       err: StringIO.new,
       store: store,
@@ -790,7 +828,7 @@ RSpec.describe CreateRailsApp::CLI do
     )
 
     status = described_class.start(
-      ['new', '--dry-run', '--rails-version', '8.1.0'],
+      ['new', '--dry-run', '--rails-version', '8.1.2'],
       out: StringIO.new,
       err: StringIO.new,
       store: store,
@@ -818,7 +856,7 @@ RSpec.describe CreateRailsApp::CLI do
 
     err = StringIO.new
     status = described_class.start(
-      ['myapp', '--rails-version', '8.1.0'],
+      ['myapp', '--rails-version', '8.1.2'],
       out: StringIO.new,
       err: err,
       store: store,
@@ -876,7 +914,7 @@ RSpec.describe CreateRailsApp::CLI do
     allow(store).to receive(:preset).with('nope').and_return(nil)
 
     status = described_class.start(
-      ['myapp', '--preset', 'nope', '--rails-version', '8.1.0'],
+      ['myapp', '--preset', 'nope', '--rails-version', '8.1.2'],
       out: StringIO.new,
       err: err,
       store: store,
@@ -903,7 +941,7 @@ RSpec.describe CreateRailsApp::CLI do
     )
 
     status = described_class.start(
-      ['myapp', '--dry-run', '--rails-version', '8.1.0'],
+      ['myapp', '--dry-run', '--rails-version', '8.1.2'],
       out: StringIO.new,
       err: StringIO.new,
       store: store,

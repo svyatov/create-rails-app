@@ -13,7 +13,7 @@ module CreateRailsApp
     # Detects the current Ruby and RubyGems versions.
     class Runtime
       # @return [RuntimeInfo]
-      def detect!
+      def detect
         RuntimeInfo.new(
           ruby: Gem::Version.new(RUBY_VERSION),
           rubygems: Gem::Version.new(Gem::VERSION)

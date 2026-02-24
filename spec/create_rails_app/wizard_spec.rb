@@ -48,6 +48,26 @@ end
 RSpec.describe CreateRailsApp::Wizard do
   let(:full_entry) { CreateRailsApp::Compatibility::Matrix.for('8.1.0') }
 
+  it 'has LABELS for every Catalog::ORDER key' do
+    expect(described_class::LABELS.keys).to include(*CreateRailsApp::Options::Catalog::ORDER)
+  end
+
+  it 'has HELP_TEXT for every Catalog::ORDER key' do
+    expect(described_class::HELP_TEXT.keys).to include(*CreateRailsApp::Options::Catalog::ORDER)
+  end
+
+  it 'has CHOICE_HELP entries for all enum values that have hints' do
+    CreateRailsApp::Options::Catalog::DEFINITIONS.each do |key, definition|
+      next unless definition[:type] == :enum
+      next unless described_class::CHOICE_HELP.key?(key)
+
+      definition[:values].each do |value|
+        expect(described_class::CHOICE_HELP[key].key?(value))
+          .to(be(true), "CHOICE_HELP[:#{key}] missing hint for '#{value}'")
+      end
+    end
+  end
+
   it 'completes a straight-through run' do
     # All defaults (include for skips, first choice for enums, no for flags)
     prompter = WizardFakePrompter.new(choices: [])
@@ -170,6 +190,27 @@ RSpec.describe CreateRailsApp::Wizard do
     ).run
 
     expect(result[:api]).to be(true)
+  end
+
+  it 'does not offer "none" for database' do
+    entry = CreateRailsApp::Compatibility::Matrix::Entry.new(
+      requirement: Gem::Requirement.new('>= 0'),
+      supported_options: {
+        active_record: nil,
+        database: %w[sqlite3 postgresql mysql trilogy]
+      }
+    )
+    prompter = WizardFakePrompter.new(choices: %w[include sqlite3])
+
+    described_class.new(
+      compatibility_entry: entry,
+      defaults: {},
+      prompter: prompter
+    ).run
+
+    db_options = prompter.seen_options[1]
+    none_option = db_options&.find { |opt| opt.match?(/\bnone\b/) }
+    expect(none_option).to be_nil
   end
 
   it 'auto-skips database when active_record is false' do

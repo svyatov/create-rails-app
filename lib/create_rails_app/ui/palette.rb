@@ -56,7 +56,7 @@ module CreateRailsApp
       # @return [String]
       def color(role, text)
         if no_color?
-          ROLE_COLORS_256.fetch(role)
+          ROLE_COLORS_256.fetch(role) # validate role key exists
           text
         elsif supports_256_colors?
           "\e[38;5;#{ROLE_COLORS_256.fetch(role)}m#{text}#{RESET}"
