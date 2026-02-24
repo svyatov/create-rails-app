@@ -24,7 +24,7 @@ Gem::Specification.new do |spec|
   spec.metadata['bug_tracker_uri'] = 'https://github.com/svyatov/create-rails-app/issues'
   spec.metadata['rubygems_mfa_required'] = 'true'
 
-  spec.files = Dir.glob(%w[lib/**/*.rb exe/*]) + %w[LICENSE.txt README.md CHANGELOG.md]
+  spec.files = `git ls-files -z`.split("\x0").grep(%r{\A(lib|exe)/}) + %w[LICENSE.txt README.md CHANGELOG.md]
   spec.bindir = 'exe'
   spec.executables = spec.files.grep(%r{\Aexe/}) { |f| File.basename(f) }
   spec.require_paths = ['lib']

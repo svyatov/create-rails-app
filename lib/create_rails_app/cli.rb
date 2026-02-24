@@ -285,8 +285,11 @@ module CreateRailsApp
         series = "#{v.segments[0]}.#{v.segments[1]}"
         Compatibility::Matrix.for(version)
         installed_version = installed_rails[series]
-        needs_install = installed_version.nil? || Gem::Version.new(installed_version) != v
-        return VersionChoice.new(version: version, series: series, needs_install: needs_install)
+        if installed_version && Gem::Version.new(installed_version) >= v
+          return VersionChoice.new(version: installed_version, series: series, needs_install: false)
+        end
+
+        return VersionChoice.new(version: version, series: series, needs_install: true)
       end
 
       choices = build_version_choices(installed_rails)
@@ -359,7 +362,11 @@ module CreateRailsApp
 
       loop do
         answer = prompter.text('App name:', allow_empty: false)
-        return answer unless answer == Wizard::BACK
+        if answer == Wizard::BACK
+          @err.puts('Nothing to go back to.')
+          next
+        end
+        return answer
       end
     end
 
@@ -517,7 +524,8 @@ module CreateRailsApp
       return if name.is_a?(String) && name.match?(PRESET_NAME_PATTERN)
 
       raise ValidationError,
-            "Invalid preset name: #{name.inspect}. Use alphanumeric characters, dashes, or underscores (max 64 chars)."
+            "Invalid preset name: #{name.inspect}. " \
+            'Must start with alphanumeric, then alphanumeric/dashes/underscores (max 64 chars).'
     end
 
     # @param hash [Hash{String => Object}]

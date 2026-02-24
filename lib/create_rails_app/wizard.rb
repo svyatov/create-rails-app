@@ -86,7 +86,9 @@ module CreateRailsApp
         'sqlite3' => 'simple file-based, great for development',
         'postgresql' => 'full-featured, most popular for production',
         'mysql' => 'widely used relational database',
-        'trilogy' => 'modern MySQL-compatible client'
+        'trilogy' => 'modern MySQL-compatible client',
+        'mariadb-mysql' => 'MariaDB with mysql2 adapter',
+        'mariadb-trilogy' => 'MariaDB with Trilogy adapter'
       },
       javascript: {
         'importmap' => 'no bundler, uses browser-native import maps',
@@ -103,11 +105,6 @@ module CreateRailsApp
         'postcss' => 'CSS transformations via plugins',
         'sass' => 'CSS with variables, nesting, and mixins',
         'none' => 'no CSS framework'
-      },
-      asset_pipeline: {
-        'propshaft' => 'modern, simple asset pipeline (Rails 8 default)',
-        'sprockets' => 'classic asset pipeline',
-        'none' => 'no asset pipeline'
       }
     }.freeze
 
@@ -184,6 +181,8 @@ module CreateRailsApp
     def find_previous_unskipped(keys, current_index)
       i = current_index - 1
       i -= 1 while i.positive? && skip_step?(keys[i])
+      return current_index if i >= 0 && skip_step?(keys[i])
+
       [i, 0].max
     end
 

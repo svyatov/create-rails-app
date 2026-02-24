@@ -16,6 +16,8 @@ end
 Rake::Task['release:rubygem_push'].enhance(['fetch_otp'])
 
 task :fetch_otp do
+  next if ENV['GEM_HOST_OTP_CODE']&.match?(/\A\d{6}\z/)
+
   abort 'OTP fetch requires the 1Password CLI (op). Install it or set GEM_HOST_OTP_CODE manually.' \
     unless system('op', '--version', out: File::NULL, err: File::NULL)
 

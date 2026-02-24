@@ -114,12 +114,12 @@ module CreateRailsApp
       # @return [void]
       def write(payload)
         FileUtils.mkdir_p(File.dirname(path))
-        Tempfile.create(['create-rails-app', '.yml'], File.dirname(path)) do |tmp|
-          tmp.write(YAML.dump(payload))
-          tmp.close
-          File.rename(tmp.path, path)
-        end
+        tmp = Tempfile.create(['create-rails-app', '.yml'], File.dirname(path))
+        tmp.write(YAML.dump(payload))
+        tmp.close
+        File.rename(tmp.path, path)
       rescue SystemCallError => e
+        File.unlink(tmp.path) if tmp&.path && File.exist?(tmp.path)
         raise ConfigError, "Failed to write config to #{path}: #{e.message}"
       end
 

@@ -1072,6 +1072,67 @@ RSpec.describe CreateRailsApp::CLI do
     )
   end
 
+  it 'prints message when BACK pressed at app-name prompt' do
+    store = instance_double(CreateRailsApp::Config::Store, last_used: {})
+    allow(store).to receive(:save_last_used)
+    allow(store).to receive(:save_preset)
+    runner = instance_double(CreateRailsApp::Runner)
+    allow(runner).to receive(:run!)
+    err = StringIO.new
+
+    prompter = CLIFakePrompter.new(
+      texts: [CreateRailsApp::Wizard::BACK, 'myapp'],
+      choices: ['create'],
+      confirms: [false]
+    )
+
+    status = described_class.start(
+      ['--dry-run', '--rails-version', '8.1.2'],
+      out: StringIO.new,
+      err: err,
+      store: store,
+      detector: detector,
+      rails_detector: rails_detector,
+      runner: runner,
+      prompter: prompter
+    )
+
+    expect(status).to eq(0)
+    expect(err.string).to include('Nothing to go back to.')
+  end
+
+  it 'skips install when installed version is higher than requested' do
+    allow(rails_detector).to receive(:detect).and_return({ '8.1' => '8.1.5' })
+
+    store = instance_double(CreateRailsApp::Config::Store, last_used: {})
+    allow(store).to receive(:save_last_used)
+    allow(store).to receive(:save_preset)
+    runner = instance_double(CreateRailsApp::Runner)
+    # Should only receive ONE run! call (rails new with installed version), not a gem install
+    expect(runner).to receive(:run!).once.with(
+      satisfy { |cmd| cmd.include?('_8.1.5_') && cmd.include?('new') },
+      dry_run: true
+    )
+
+    prompter = CLIFakePrompter.new(
+      choices: ['create'],
+      confirms: [false]
+    )
+
+    status = described_class.start(
+      ['myapp', '--dry-run', '--rails-version', '8.1.2'],
+      out: StringIO.new,
+      err: StringIO.new,
+      store: store,
+      detector: detector,
+      rails_detector: rails_detector,
+      runner: runner,
+      prompter: prompter
+    )
+
+    expect(status).to eq(0)
+  end
+
   it 'rejects --list-presets combined with --show-preset' do
     err = StringIO.new
     status = described_class.start(

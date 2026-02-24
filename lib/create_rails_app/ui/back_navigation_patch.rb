@@ -31,6 +31,10 @@ module CreateRailsApp
       #
       # @return [void]
       def self.apply!
+        unless ::CLI::UI::Prompt.respond_to?(:read_char)
+          raise Error, 'CLI::UI::Prompt does not respond to read_char; back-navigation patch cannot be applied'
+        end
+
         singleton = ::CLI::UI::Prompt.singleton_class
         return if singleton.ancestors.include?(PromptReadCharPatch)
 

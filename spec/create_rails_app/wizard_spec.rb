@@ -242,7 +242,7 @@ RSpec.describe CreateRailsApp::Wizard do
         api: nil,
         javascript: %w[importmap bun],
         css: %w[tailwind bootstrap],
-        asset_pipeline: %w[propshaft sprockets],
+        asset_pipeline: nil,
         hotwire: nil,
         jbuilder: nil,
         action_text: nil

@@ -18,16 +18,27 @@ RSpec.describe CreateRailsApp::Compatibility::Matrix do
       expect(entry.supports_option?(:ci)).to be(true)
     end
 
-    it 'returns a match for Rails 7.2 without 8.0+ options' do
+    it 'returns a match for Rails 7.2 with brakeman/ci/devcontainer but without 8.0+ options' do
       entry = described_class.for('7.2.3')
       expect(entry.supports_option?(:database)).to be(true)
       expect(entry.supports_option?(:hotwire)).to be(true)
+      expect(entry.supports_option?(:brakeman)).to be(true)
+      expect(entry.supports_option?(:ci)).to be(true)
+      expect(entry.supports_option?(:devcontainer)).to be(true)
       expect(entry.supports_option?(:kamal)).to be(false)
-      expect(entry.supports_option?(:brakeman)).to be(false)
-      expect(entry.supports_option?(:ci)).to be(false)
       expect(entry.supports_option?(:solid)).to be(false)
-      expect(entry.supports_option?(:devcontainer)).to be(false)
       expect(entry.supports_option?(:thruster)).to be(false)
+    end
+
+    it 'does not support mariadb databases for Rails 7.2' do
+      entry = described_class.for('7.2.3')
+      expect(entry.allowed_values(:database)).not_to include('mariadb-mysql')
+      expect(entry.allowed_values(:database)).not_to include('mariadb-trilogy')
+    end
+
+    it 'supports mariadb databases for Rails 8.0+' do
+      entry = described_class.for('8.0.0')
+      expect(entry.allowed_values(:database)).to include('mariadb-mysql', 'mariadb-trilogy')
     end
 
     it 'raises for unsupported versions' do

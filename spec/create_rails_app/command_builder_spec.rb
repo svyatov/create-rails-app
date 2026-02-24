@@ -96,6 +96,15 @@ RSpec.describe CreateRailsApp::CommandBuilder do
     expect(command).to eq(%w[rails _8.1.0_ new myapp])
   end
 
+  it 'does not emit nil for enum false without :none key' do
+    command = builder.build(
+      app_name: 'myapp',
+      rails_version: '8.1.0',
+      options: { database: false }
+    )
+    expect(command).to eq(%w[rails _8.1.0_ new myapp])
+  end
+
   it 'omits version pin when rails_version is nil' do
     command = builder.build(app_name: 'myapp', options: { database: 'postgresql' })
     expect(command).to eq(%w[rails new myapp --database=postgresql])

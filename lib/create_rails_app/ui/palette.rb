@@ -69,7 +69,7 @@ module CreateRailsApp
 
       # @return [Boolean]
       def no_color?
-        @env.key?('NO_COLOR')
+        @env.key?('NO_COLOR') || @env['TERM'] == 'dumb'
       end
 
       # @return [Boolean]

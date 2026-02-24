@@ -48,10 +48,10 @@ module CreateRailsApp
       # Enum values are derived from Catalog::DEFINITIONS to prevent drift.
       COMMON_OPTIONS = {
         api: nil,
-        database: Options::Catalog::DEFINITIONS[:database][:values],
+        database: %w[sqlite3 postgresql mysql trilogy].freeze,
         javascript: Options::Catalog::DEFINITIONS[:javascript][:values],
         css: Options::Catalog::DEFINITIONS[:css][:values],
-        asset_pipeline: Options::Catalog::DEFINITIONS[:asset_pipeline][:values],
+        asset_pipeline: nil,
         active_record: nil,
         action_mailer: nil,
         action_mailbox: nil,
@@ -63,8 +63,11 @@ module CreateRailsApp
         jbuilder: nil,
         test: nil,
         system_test: nil,
+        brakeman: nil,
         rubocop: nil,
+        ci: nil,
         docker: nil,
+        devcontainer: nil,
         bootsnap: nil,
         git: nil,
         bundle: nil
@@ -72,12 +75,10 @@ module CreateRailsApp
 
       # Options only available in Rails 8.0+.
       RAILS_8_OPTIONS = {
-        brakeman: nil,
-        ci: nil,
         kamal: nil,
         thruster: nil,
         solid: nil,
-        devcontainer: nil
+        database: %w[sqlite3 postgresql mysql trilogy mariadb-mysql mariadb-trilogy].freeze
       }.freeze
 
       # @return [Array<Entry>] all known Rails compatibility entries

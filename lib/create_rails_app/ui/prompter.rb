@@ -65,6 +65,8 @@ module CreateRailsApp
       # @return [Boolean]
       def confirm(question, default: true)
         ::CLI::UI.confirm(question, default: default)
+      rescue BackKeyPressed
+        default
       end
 
       # Prints a formatted message to the output stream.

@@ -46,7 +46,7 @@ module CreateRailsApp
         command << definition[:on] if value == true
       when :enum
         command << "#{definition[:flag]}=#{value}" if value.is_a?(String)
-        command << definition[:none] if value == false
+        command << definition[:none] if value == false && definition[:none]
       end
     end
   end

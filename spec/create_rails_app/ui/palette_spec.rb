@@ -50,6 +50,14 @@ RSpec.describe CreateRailsApp::UI::Palette do
     expect(result).not_to include('{{')
   end
 
+  it 'returns plain text when TERM=dumb' do
+    palette = described_class.new(env: { 'TERM' => 'dumb', 'COLORTERM' => '' })
+    result = palette.color(:summary_label, 'hello')
+
+    expect(result).to eq('hello')
+    expect(result).not_to include("\e[")
+  end
+
   it 'raises KeyError for unknown role on 256-color terminal' do
     palette = described_class.new(env: { 'TERM' => 'xterm-256color', 'COLORTERM' => '' })
 

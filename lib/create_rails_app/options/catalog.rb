@@ -23,13 +23,12 @@ module CreateRailsApp
         api: { type: :flag, on: '--api' }.freeze,
         # Enums
         database: { type: :enum, flag: '--database',
-                    values: %w[sqlite3 postgresql mysql trilogy].freeze }.freeze,
+                    values: %w[sqlite3 postgresql mysql trilogy mariadb-mysql mariadb-trilogy].freeze }.freeze,
         javascript: { type: :enum, flag: '--javascript', none: '--skip-javascript',
                       values: %w[importmap bun webpack esbuild rollup].freeze }.freeze,
         css: { type: :enum, flag: '--css', none: '--skip-css',
                values: %w[tailwind bootstrap bulma postcss sass].freeze }.freeze,
-        asset_pipeline: { type: :enum, flag: '--asset-pipeline', none: '--skip-asset-pipeline',
-                          values: %w[propshaft sprockets].freeze }.freeze,
+        asset_pipeline: { type: :skip, skip_flag: '--skip-asset-pipeline' }.freeze,
         # Skip (included by default, --skip-X to exclude)
         active_record: { type: :skip, skip_flag: '--skip-active-record' }.freeze,
         action_mailer: { type: :skip, skip_flag: '--skip-action-mailer' }.freeze,
@@ -49,7 +48,7 @@ module CreateRailsApp
         kamal: { type: :skip, skip_flag: '--skip-kamal' }.freeze,
         thruster: { type: :skip, skip_flag: '--skip-thruster' }.freeze,
         solid: { type: :skip, skip_flag: '--skip-solid' }.freeze,
-        devcontainer: { type: :skip, skip_flag: '--skip-devcontainer' }.freeze,
+        devcontainer: { type: :flag, on: '--devcontainer' }.freeze,
         bootsnap: { type: :skip, skip_flag: '--skip-bootsnap' }.freeze,
         git: { type: :skip, skip_flag: '--skip-git' }.freeze,
         bundle: { type: :skip, skip_flag: '--skip-bundle' }.freeze

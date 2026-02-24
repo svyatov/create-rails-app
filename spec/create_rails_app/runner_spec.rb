@@ -33,6 +33,15 @@ RSpec.describe CreateRailsApp::Runner do
     end.to raise_error(CreateRailsApp::Error, /Command failed/)
   end
 
+  it 'includes exitstatus in error message' do
+    status = instance_double(Process::Status, success?: false, exitstatus: 42)
+    runner = described_class.new(out: StringIO.new, system_runner: ->(*) { status })
+
+    expect do
+      runner.run!(%w[rails new myapp])
+    end.to raise_error(CreateRailsApp::Error, /exit 42/)
+  end
+
   it 'shell-escapes dry-run output for arguments with spaces' do
     out = StringIO.new
     described_class.new(out: out).run!(['rails', 'new', 'my app'], dry_run: true)

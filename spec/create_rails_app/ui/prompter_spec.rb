@@ -41,6 +41,13 @@ RSpec.describe CreateRailsApp::UI::Prompter do
     expect(prompter.confirm('Sure?')).to be(true)
   end
 
+  it '#confirm returns default when BackKeyPressed is raised' do
+    prompter = described_class.new(out: StringIO.new)
+    allow(CLI::UI).to receive(:confirm).and_raise(CreateRailsApp::UI::BackKeyPressed)
+
+    expect(prompter.confirm('Sure?', default: false)).to be(false)
+  end
+
   it '#text maps Ctrl+B signal to back token' do
     described_class.setup!
     prompter = described_class.new(out: StringIO.new)
