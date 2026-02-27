@@ -2,6 +2,8 @@
 
 > Interactive CLI wizard for `rails new` — walks you through every option, remembers your choices, and saves reusable presets.
 
+![create-rails-app demo](demo.gif)
+
 ## Table of Contents
 
 - [Supported Ruby Versions](#supported-ruby-versions)

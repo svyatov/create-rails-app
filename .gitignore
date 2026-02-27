@@ -13,6 +13,9 @@
 # rubocop cache
 /.rubocop_cache/
 
+# blog drafts
+/blog/
+
 # built gems
 *.gem
 
