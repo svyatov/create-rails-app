@@ -42,6 +42,7 @@ Catalog (definition) → Matrix (version compatibility) → Wizard (UI) → Comm
 
 ## Code Style
 
+- **No Gemfile.lock in git** — this is a gem; CI resolves dependencies fresh, so new RuboCop cops may appear between local and CI runs
 - Ruby 3.2+ required
 - Max line length: 120 characters
 - RuboCop with rubocop-rspec extension
@@ -133,4 +134,6 @@ This project follows [Semantic Versioning 2.0.0](https://semver.org/spec/v2.0.0.
 2. Update `CHANGELOG.md`: change `[Unreleased]` to `[X.Y.Z] - YYYY-MM-DD` and add new empty `[Unreleased]` section
 3. Commit changes: `git commit -am "chore: release vX.Y.Z"`
 4. Release: `bundle exec rake release` — builds the gem, creates and pushes the git tag, pushes to RubyGems.org
-5. Create GitHub release at https://github.com/svyatov/create-rails-app/releases with notes from CHANGELOG
+   - OTP is fetched automatically via 1Password CLI (`op`); if that fails, set `GEM_HOST_OTP_CODE` manually
+   - If `gem push` fails (e.g. OTP timeout), run `gem push pkg/create-rails-app-X.Y.Z.gem` manually
+5. Create GitHub release: `gh release create vX.Y.Z --title "vX.Y.Z" --notes "Release notes here"`
