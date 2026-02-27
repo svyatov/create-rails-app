@@ -21,10 +21,11 @@ jobs:
       fail-fast: false
       matrix:
         ruby:
-          - "3.2"
-          - "3.3"
-          - "3.4"
+          - "ruby-head"
           - "4.0"
+          - "3.4"
+          - "3.3"
+          - "3.2"
 
     steps:
       - uses: actions/checkout@v6.0.2
@@ -35,5 +36,13 @@ jobs:
         with:
           ruby-version: ${{ matrix.ruby }}
           bundler-cache: true
+        continue-on-error: ${{ matrix.ruby == 'ruby-head' }}
       - name: Run the default task
         run: bundle exec rake
+        continue-on-error: ${{ matrix.ruby == 'ruby-head' }}
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          slug: svyatov/create-rails-app
+        if: ${{ matrix.ruby == '4.0' }}

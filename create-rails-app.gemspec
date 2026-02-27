@@ -8,15 +8,16 @@ Gem::Specification.new do |spec|
   spec.authors = ['Leonid Svyatov']
   spec.email = ['leonid@svyatov.com']
 
-  spec.summary = 'Create Rails apps with an interactive CLI wizard that remembers your choices'
-  spec.description = 'Interactive CLI wizard for rails new. ' \
-                     'Walks you through every option, saves presets, and remembers your choices. ' \
-                     'No more rails new flags look-ups!'
+  spec.summary = 'Interactive CLI wizard for rails new that remembers your choices and saves presets.'
+  spec.description = 'Stop memorizing rails new flags. This interactive CLI wizard walks you through every option, ' \
+                     'remembers your last choices, and saves reusable presets. Supports Rails 7.2+ ' \
+                     'with version-aware option filtering, back navigation, and dry-run mode.'
   spec.homepage = 'https://github.com/svyatov/create-rails-app'
   spec.license = 'MIT'
   spec.required_ruby_version = Gem::Requirement.new('>= 3.2')
 
   spec.metadata['allowed_push_host'] = 'https://rubygems.org'
+  spec.metadata['homepage_uri'] = spec.homepage
   spec.metadata['source_code_uri'] = 'https://github.com/svyatov/create-rails-app'
   spec.metadata['changelog_uri'] = 'https://github.com/svyatov/create-rails-app/blob/main/CHANGELOG.md'
   spec.metadata['documentation_uri'] = 'https://rubydoc.info/gems/create-rails-app'
