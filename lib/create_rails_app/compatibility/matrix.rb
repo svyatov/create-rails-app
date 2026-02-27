@@ -19,7 +19,7 @@ module CreateRailsApp
       # @!attribute [r] supported_options
       #   @return [Hash{Symbol => Array<String>, nil}] option keys to allowed
       #     values (+nil+ means any boolean/skip value is accepted)
-      Entry = Struct.new(:requirement, :supported_options, keyword_init: true) do
+      Entry = Struct.new(:requirement, :supported_options) do
         # @param rails_version [Gem::Version] version to test
         # @return [Boolean]
         def match?(rails_version)

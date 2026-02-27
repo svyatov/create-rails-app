@@ -13,7 +13,7 @@ module CreateRailsApp
   #   CreateRailsApp::CLI.start(ARGV)
   class CLI
     # Holds the resolved Rails version info and whether installation is needed.
-    VersionChoice = Struct.new(:version, :series, :needs_install, keyword_init: true)
+    VersionChoice = Struct.new(:version, :series, :needs_install)
 
     # Constructs and runs a CLI instance with the given arguments.
     #

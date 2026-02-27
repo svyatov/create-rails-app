@@ -8,7 +8,7 @@ module CreateRailsApp
     #   @return [Gem::Version]
     # @!attribute [r] rubygems
     #   @return [Gem::Version]
-    RuntimeInfo = Struct.new(:ruby, :rubygems, keyword_init: true)
+    RuntimeInfo = Struct.new(:ruby, :rubygems)
 
     # Detects the current Ruby and RubyGems versions.
     class Runtime
