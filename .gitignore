@@ -15,3 +15,6 @@
 
 # built gems
 *.gem
+
+# gems should not lock dependencies
+Gemfile.lock
