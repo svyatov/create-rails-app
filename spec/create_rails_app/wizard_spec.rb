@@ -163,9 +163,9 @@ RSpec.describe CreateRailsApp::Wizard do
     expect(result).not_to have_key(:action_text)
   end
 
-  it 'auto-skips system_test when test is none' do
-    entry = build_entry(test: %w[minitest], system_test: nil)
-    prompter = FakePrompter.new(choices: %w[none])
+  it 'auto-skips system_test when test is skipped' do
+    entry = build_entry(test: nil, system_test: nil)
+    prompter = FakePrompter.new(choices: %w[yes])
 
     result = described_class.new(compatibility_entry: entry, defaults: {}, prompter: prompter).run
 
@@ -331,7 +331,7 @@ RSpec.describe CreateRailsApp::Wizard do
   it 'back-navigates past auto-skipped steps' do
     entry = build_entry(
       api: nil, javascript: %w[importmap bun], css: %w[tailwind],
-      hotwire: nil, jbuilder: nil, action_text: nil, test: %w[minitest]
+      hotwire: nil, jbuilder: nil, action_text: nil, test: nil
     )
     prompter = FakePrompter.new(
       choices: [
@@ -343,7 +343,7 @@ RSpec.describe CreateRailsApp::Wizard do
         'no',                                   # skip hotwire? no
         'no',                                   # skip jbuilder? no
         'no',                                   # skip action_text? no
-        'minitest'                              # test
+        'no'                                    # skip test? no
       ]
     )
 

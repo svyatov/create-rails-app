@@ -146,11 +146,11 @@ RSpec.describe CreateRailsApp::CommandBuilder do
     expect(command).to eq(%w[rails _8.0.0_ new myapp])
   end
 
-  it 'emits nothing for test minitest (nil flag)' do
+  it 'emits nothing for test true (include tests)' do
     command = builder.build(
       app_name: 'myapp',
       rails_version: '8.1.0',
-      options: { test: 'minitest' }
+      options: { test: true }
     )
     expect(command).to eq(%w[rails _8.1.0_ new myapp])
   end

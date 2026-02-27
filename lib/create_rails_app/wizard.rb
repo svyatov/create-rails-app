@@ -30,7 +30,7 @@ module CreateRailsApp
       active_job: 'Active Job',
       active_storage: 'Active Storage (file uploads)',
       action_cable: 'Action Cable (WebSockets)',
-      test: 'Test framework',
+      test: 'Tests',
       system_test: 'System tests',
       brakeman: 'Brakeman (security scanner)',
       bundler_audit: 'Bundler Audit (dependency checker)',
@@ -42,6 +42,9 @@ module CreateRailsApp
       solid: 'Solid (Cache/Queue/Cable)',
       devcontainer: 'Dev Container',
       bootsnap: 'Bootsnap (boot speedup)',
+      dev_gems: 'Dev gems',
+      keeps: 'Source control .keep files',
+      decrypted_diffs: 'Decrypted diffs',
       git: 'Initialize git',
       bundle: 'Run bundle install'
     }.freeze
@@ -76,6 +79,9 @@ module CreateRailsApp
       solid: 'Solid Cache, Solid Queue, and Solid Cable adapters.',
       devcontainer: 'Generates VS Code dev container configuration.',
       bootsnap: 'Speeds up boot times with caching.',
+      dev_gems: 'Development gems like web-console.',
+      keeps: 'Empty directories preserved via .keep files.',
+      decrypted_diffs: 'Show decrypted diffs of encrypted credentials in git.',
       git: 'Initializes a git repository for the new app.',
       bundle: 'Runs bundle install after generating the app.'
     }.freeze
@@ -99,10 +105,6 @@ module CreateRailsApp
         'esbuild' => 'extremely fast JS bundler',
         'rollup' => 'ES module-focused bundler',
         'none' => 'no JavaScript setup'
-      },
-      test: {
-        'minitest' => 'Rails default testing framework',
-        'none' => 'no test setup'
       },
       asset_pipeline: {
         'propshaft' => 'modern, lightweight asset pipeline',

@@ -47,8 +47,7 @@ module CreateRailsApp
         action_cable: { type: :skip, skip_flag: '--skip-action-cable' }.freeze,
         hotwire: { type: :skip, skip_flag: '--skip-hotwire' }.freeze,
         jbuilder: { type: :skip, skip_flag: '--skip-jbuilder' }.freeze,
-        test: { type: :enum, flag: nil, none: '--skip-test',
-                values: %w[minitest].freeze, rails_default: 'minitest' }.freeze,
+        test: { type: :skip, skip_flag: '--skip-test' }.freeze,
         system_test: { type: :skip, skip_flag: '--skip-system-test' }.freeze,
         brakeman: { type: :skip, skip_flag: '--skip-brakeman' }.freeze,
         bundler_audit: { type: :skip, skip_flag: '--skip-bundler-audit' }.freeze,
@@ -60,6 +59,9 @@ module CreateRailsApp
         solid: { type: :skip, skip_flag: '--skip-solid' }.freeze,
         devcontainer: { type: :flag, on: '--devcontainer' }.freeze,
         bootsnap: { type: :skip, skip_flag: '--skip-bootsnap' }.freeze,
+        dev_gems: { type: :skip, skip_flag: '--skip-dev-gems' }.freeze,
+        keeps: { type: :skip, skip_flag: '--skip-keeps' }.freeze,
+        decrypted_diffs: { type: :skip, skip_flag: '--skip-decrypted-diffs' }.freeze,
         git: { type: :skip, skip_flag: '--skip-git' }.freeze,
         bundle: { type: :skip, skip_flag: '--skip-bundle' }.freeze
       }.freeze
@@ -94,6 +96,9 @@ module CreateRailsApp
         solid
         devcontainer
         bootsnap
+        dev_gems
+        keeps
+        decrypted_diffs
         git
         bundle
       ].freeze

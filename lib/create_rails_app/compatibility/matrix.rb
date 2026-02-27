@@ -61,7 +61,7 @@ module CreateRailsApp
         action_cable: nil,
         hotwire: nil,
         jbuilder: nil,
-        test: Options::Catalog::DEFINITIONS[:test][:values],
+        test: nil,
         system_test: nil,
         brakeman: nil,
         rubocop: nil,
@@ -69,6 +69,9 @@ module CreateRailsApp
         docker: nil,
         devcontainer: nil,
         bootsnap: nil,
+        dev_gems: nil,
+        keeps: nil,
+        decrypted_diffs: nil,
         git: nil,
         bundle: nil
       }.freeze

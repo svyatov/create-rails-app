@@ -54,10 +54,10 @@ RSpec.describe CreateRailsApp::Compatibility::Matrix do
       expect(entry.allowed_values(:asset_pipeline)).to be_nil
     end
 
-    it 'provides test enum values across all versions' do
+    it 'provides test as skip (nil) across all versions' do
       %w[7.2.0 8.0.0 8.1.0].each do |version|
         entry = described_class.for(version)
-        expect(entry.allowed_values(:test)).to eq(%w[minitest])
+        expect(entry.allowed_values(:test)).to be_nil
       end
     end
 
