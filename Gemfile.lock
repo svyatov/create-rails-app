@@ -9,8 +9,8 @@ GEM
   remote: https://rubygems.org/
   specs:
     ast (2.4.3)
-    cli-kit (5.0.1)
-      cli-ui (~> 2.0)
+    cli-kit (5.2.0)
+      cli-ui (~> 2.4)
     cli-ui (2.7.0)
     date (3.5.1)
     diff-lcs (1.6.2)
@@ -95,12 +95,12 @@ DEPENDENCIES
   irb
   rake (~> 13.0)
   rspec (~> 3.0)
-  rubocop (~> 1.21)
+  rubocop (~> 1.84)
   simplecov
 
 CHECKSUMS
   ast (2.4.3) sha256=954615157c1d6a382bc27d690d973195e79db7f55e9765ac7c481c60bdb4d383
-  cli-kit (5.0.1) sha256=8ed02b3b6fdde35bd5bffdce81c8075f01eb33ff34c905ae9a0c48c52625406a
+  cli-kit (5.2.0) sha256=6eb44b6648fb644e801c8d05cbc85e4a7ea5c5fc2b42d2312e2ea78606a3be7d
   cli-ui (2.7.0) sha256=e36147f2e8088796b996f0560f577bd1599f2b6aa3c374fe09fff59af5589c35
   create-rails-app (0.1.0)
   date (3.5.1) sha256=750d06384d7b9c15d562c76291407d89e368dda4d4fff957eb94962d325a0dc0
