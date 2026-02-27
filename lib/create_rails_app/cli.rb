@@ -101,17 +101,12 @@ module CreateRailsApp
       app_name = resolve_app_name!
 
       if @options[:minimal]
-        if version_choice.needs_install
-          installed_version = install_rails!(version_choice)
-          version_choice = VersionChoice.new(
-            version: installed_version || version_choice.version,
-            series: version_choice.series,
-            needs_install: false
-          )
-        end
+        Options::Validator.new(compatibility_entry).validate!(app_name: app_name, options: {})
+
+        version_choice = install_and_update_version!(version_choice) if version_choice.needs_install
 
         command = builder.build(app_name: app_name, rails_version: version_choice.version, options: {}, minimal: true)
-        @runner.run!(command, dry_run: @options[:dry_run] || false)
+        @runner.run!(command, dry_run: @options[:dry_run])
         return 0
       end
 
@@ -131,14 +126,7 @@ module CreateRailsApp
 
       Options::Validator.new(compatibility_entry).validate!(app_name: app_name, options: selected_options)
 
-      if version_choice.needs_install
-        installed_version = install_rails!(version_choice)
-        version_choice = VersionChoice.new(
-          version: installed_version || version_choice.version,
-          series: version_choice.series,
-          needs_install: false
-        )
-      end
+      version_choice = install_and_update_version!(version_choice) if version_choice.needs_install
 
       command = builder.build(
         app_name: app_name,
@@ -147,7 +135,7 @@ module CreateRailsApp
         minimal: false
       )
 
-      @runner.run!(command, dry_run: @options[:dry_run] || false)
+      @runner.run!(command, dry_run: @options[:dry_run])
       unless @options[:dry_run]
         begin
           @store.save_last_used(selected_options)
@@ -372,6 +360,19 @@ module CreateRailsApp
       version
     end
 
+    # Installs Rails and returns an updated VersionChoice.
+    #
+    # @param version_choice [VersionChoice]
+    # @return [VersionChoice]
+    def install_and_update_version!(version_choice)
+      installed_version = install_rails!(version_choice)
+      VersionChoice.new(
+        version: installed_version || version_choice.version,
+        series: version_choice.series,
+        needs_install: false
+      )
+    end
+
     # @return [String] app name from argv or interactive prompt
     # @raise [ValidationError] if app name is required but missing
     def resolve_app_name!
@@ -488,9 +489,9 @@ module CreateRailsApp
     end
 
     # @param str [String]
-    # @return [String] text with ANSI escape codes removed
-    def strip_ansi(str)
-      str.gsub(/\e\[[0-9;]*m/, '')
+    # @return [String] text with ANSI escape codes and cli-ui markup removed
+    def strip_formatting(str)
+      str.gsub(/\e\[[0-9;]*m/, '').gsub(/\{\{[^}]*:([^}]*)\}\}/, '\1')
     end
 
     # @return [Integer]
@@ -509,13 +510,13 @@ module CreateRailsApp
       full = "#{prefix} #{formatted_args.join(' ')}"
       # Frame borders consume ~4 chars
       max_width = terminal_width - 4
-      return [full] if strip_ansi(full).length <= max_width
+      return [full] if strip_formatting(full).length <= max_width
 
       lines = ["#{prefix} \\"]
       current = '  '
       formatted_args.each_with_index do |arg, i|
         candidate = current == '  ' ? "#{current}#{arg}" : "#{current} #{arg}"
-        if strip_ansi(candidate).length > max_width && current != '  '
+        if strip_formatting(candidate).length > max_width && current != '  '
           lines << "#{current} \\"
           current = "  #{arg}"
         else

@@ -103,6 +103,15 @@ RSpec.describe CreateRailsApp::Options::Validator do
     end.to raise_error(CreateRailsApp::ValidationError, /Invalid value/)
   end
 
+  it 'rejects enum string value when compatibility matrix returns nil' do
+    entry_eight = CreateRailsApp::Compatibility::Matrix.for('8.0.0')
+    validator_eight = described_class.new(entry_eight)
+
+    expect do
+      validator_eight.validate!(app_name: 'myapp', options: { asset_pipeline: 'sprockets' })
+    end.to raise_error(CreateRailsApp::ValidationError, /not supported by this Rails version/)
+  end
+
   it 'rejects enum value that passes type check but fails compatibility check' do
     # Create an entry that supports database but only allows sqlite3
     restricted_entry = CreateRailsApp::Compatibility::Matrix::Entry.new(

@@ -168,7 +168,7 @@ RSpec.describe CreateRailsApp::CLI do
       ['gem', 'install', 'rails', '-v', '7.2.0']
     ).ordered
     expect(runner).to receive(:run!).with(
-      satisfy { |cmd| cmd.first(4) == %w[rails _7.2.0_ new myapp] }, dry_run: false
+      satisfy { |cmd| cmd.first(4) == %w[rails _7.2.0_ new myapp] }, dry_run: nil
     ).ordered
 
     status = run_cli(
@@ -232,6 +232,19 @@ RSpec.describe CreateRailsApp::CLI do
       prompter: FakePrompter.new(texts: ['prompted_app'], choices: ['create'], confirms: [false])
     )
     expect(status).to eq(0)
+  end
+
+  it 'rejects invalid app name with --minimal' do
+    err = StringIO.new
+    runner = instance_double(CreateRailsApp::Runner)
+    expect(runner).not_to receive(:run!)
+
+    status = run_cli(
+      ['123bad', '--dry-run', '--rails-version', '8.1.2', '--minimal'],
+      err: err, runner: runner
+    )
+    expect(status).to eq(1)
+    expect(err.string).to include('Invalid app name')
   end
 
   it 'passes --minimal directly without wizard or store' do

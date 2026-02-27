@@ -90,7 +90,7 @@ module CreateRailsApp
         return if value.nil? || value == true || value == false
 
         supported_values = @compatibility_entry.allowed_values(key)
-        return if supported_values.nil? || supported_values.include?(value)
+        return if supported_values&.include?(value)
 
         raise ValidationError, "Value #{value.inspect} for #{key} is not supported by this Rails version"
       end
