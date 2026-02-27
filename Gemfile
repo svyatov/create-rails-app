@@ -6,9 +6,10 @@ source 'https://rubygems.org'
 gemspec
 
 gem 'irb'
-gem 'rake', '~> 13.0'
+gem 'rake', '~> 13.3.1'
 
-gem 'rspec', '~> 3.0'
+gem 'rspec', '~> 3.13.2'
 gem 'simplecov', require: false
+gem 'simplecov_json_formatter', require: false
 
-gem 'rubocop', '~> 1.84'
+gem 'rubocop', '~> 1.85.0'

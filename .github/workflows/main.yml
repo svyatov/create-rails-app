@@ -27,6 +27,9 @@ jobs:
           - "3.3"
           - "3.2"
 
+    env:
+      COVERAGE: true
+
     steps:
       - uses: actions/checkout@v6.0.2
         with:

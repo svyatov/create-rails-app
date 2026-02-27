@@ -1,9 +1,17 @@
 # frozen_string_literal: true
 
-require 'simplecov'
-SimpleCov.start do
-  enable_coverage :branch
-  add_filter '/spec/'
+if ENV['COVERAGE']
+  require 'simplecov'
+
+  if ENV['CI']
+    require 'simplecov_json_formatter'
+    SimpleCov.formatter = SimpleCov::Formatter::JSONFormatter
+  end
+
+  SimpleCov.start do
+    enable_coverage :branch
+    add_filter '/spec/'
+  end
 end
 
 require 'create_rails_app'
