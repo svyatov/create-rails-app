@@ -418,16 +418,18 @@ module CreateRailsApp
       version_choice:
     )
       defaults = last_used
+      start_index = 0
       prompter.frame('Controls') do
         prompter.say("Press #{palette.color(:control_back, 'Ctrl+B')} to go back one step.")
         prompter.say("Press #{palette.color(:control_exit, 'Ctrl+C')} to exit.")
       end
       loop do
-        selected_options = Wizard.new(
+        wizard = Wizard.new(
           compatibility_entry: compatibility_entry,
           defaults: defaults,
           prompter: prompter
-        ).run
+        )
+        selected_options = wizard.run(start_index: start_index)
 
         command = builder.build(
           app_name: app_name,
@@ -442,9 +444,15 @@ module CreateRailsApp
           version_choice: version_choice
         )
         action = prompter.choose('Next step', options: ['create', 'edit again'], default: 'create')
+        if action == Wizard::BACK
+          defaults = selected_options
+          start_index = wizard.last_presented_index
+          next
+        end
         return selected_options if action == 'create'
 
         defaults = selected_options
+        start_index = 0
       end
     end
 

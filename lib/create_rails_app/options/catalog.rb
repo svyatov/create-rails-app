@@ -68,6 +68,10 @@ module CreateRailsApp
 
       # Wizard step order — matches the sequence users see.
       #
+      # Phase 1: Core architecture (flags + enums + active_record)
+      # Phase 2: Skip options with auto-skip consequences + dependents
+      # Phase 3: Independent skips + devcontainer flag
+      #
       # @return [Array<Symbol>]
       ORDER = %i[
         api
@@ -76,16 +80,17 @@ module CreateRailsApp
         javascript
         css
         asset_pipeline
-        hotwire
-        jbuilder
-        action_mailer
-        action_mailbox
-        action_text
-        active_job
-        active_storage
-        action_cable
         test
         system_test
+        hotwire
+        jbuilder
+        action_mailbox
+        action_text
+        active_storage
+        devcontainer
+        action_mailer
+        active_job
+        action_cable
         brakeman
         bundler_audit
         rubocop
@@ -94,7 +99,6 @@ module CreateRailsApp
         kamal
         thruster
         solid
-        devcontainer
         bootsnap
         dev_gems
         keeps

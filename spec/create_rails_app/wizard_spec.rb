@@ -333,6 +333,8 @@ RSpec.describe CreateRailsApp::Wizard do
       api: nil, javascript: %w[importmap bun], css: %w[tailwind],
       hotwire: nil, jbuilder: nil, action_text: nil, test: nil
     )
+    # New ORDER: api, js, css, test, hotwire, jbuilder, action_text
+    # api=true skips js, css, hotwire, jbuilder, action_text → lands on test
     prompter = FakePrompter.new(
       choices: [
         'yes',                                  # api = true (skips js, css, hotwire, jbuilder, action_text)
@@ -340,10 +342,10 @@ RSpec.describe CreateRailsApp::Wizard do
         'no',                                   # api = no
         'importmap',                            # javascript
         'tailwind',                             # css
+        'no',                                   # skip test? no
         'no',                                   # skip hotwire? no
         'no',                                   # skip jbuilder? no
-        'no',                                   # skip action_text? no
-        'no'                                    # skip test? no
+        'no'                                    # skip action_text? no
       ]
     )
 
@@ -351,5 +353,45 @@ RSpec.describe CreateRailsApp::Wizard do
 
     expect(result).not_to have_key(:api)
     expect(result[:javascript]).to eq('importmap')
+  end
+
+  it 'starts from the given start_index' do
+    entry = build_entry(hotwire: nil, jbuilder: nil, docker: nil)
+    prompter = FakePrompter.new(choices: %w[no no])
+
+    result = described_class.new(
+      compatibility_entry: entry,
+      defaults: { hotwire: true },
+      prompter: prompter
+    ).run(start_index: 1)
+
+    # Started at index 1 (jbuilder), skipped hotwire entirely
+    expect(prompter.seen_questions.length).to eq(2)
+    expect(result[:hotwire]).to be(true)
+    expect(result[:jbuilder]).to be(true)
+    expect(result[:docker]).to be(true)
+  end
+
+  it 'tracks last_presented_index' do
+    entry = build_entry(hotwire: nil, jbuilder: nil, docker: nil)
+    prompter = FakePrompter.new(choices: %w[no no no])
+
+    wizard = described_class.new(compatibility_entry: entry, defaults: {}, prompter: prompter)
+    wizard.run
+
+    expect(wizard.last_presented_index).to eq(2)
+  end
+
+  it 'clamps start_index to last step' do
+    entry = build_entry(api: nil)
+    prompter = FakePrompter.new(choices: %w[yes])
+
+    result = described_class.new(
+      compatibility_entry: entry,
+      defaults: {},
+      prompter: prompter
+    ).run(start_index: 999)
+
+    expect(result[:api]).to be(true)
   end
 end

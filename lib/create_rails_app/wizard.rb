@@ -138,6 +138,8 @@ module CreateRailsApp
       system_test: ->(values) { values[:test] == false || values[:api] == true }
     }.freeze
 
+    attr_reader :last_presented_index
+
     # @param compatibility_entry [Compatibility::Matrix::Entry]
     # @param defaults [Hash{Symbol => Object}] initial default values (e.g. last-used)
     # @param prompter [UI::Prompter]
@@ -146,14 +148,16 @@ module CreateRailsApp
       @prompter = prompter
       @values = sanitize_defaults(defaults)
       @stashed = {}
+      @last_presented_index = 0
     end
 
     # Runs the wizard and returns the selected options.
     #
+    # @param start_index [Integer] step index to resume from
     # @return [Hash{Symbol => Object}]
-    def run
+    def run(start_index: 0)
       keys = Options::Catalog::ORDER.select { |key| @compatibility_entry.supports_option?(key) }
-      index = 0
+      index = [start_index, keys.length - 1].min
       while index < keys.length
         key = keys[index]
 
@@ -165,6 +169,7 @@ module CreateRailsApp
 
         @values[key] = @stashed.delete(key) if @stashed.key?(key) && !@values.key?(key)
 
+        @last_presented_index = index
         answer = ask_for(key, index:, total: keys.length)
         case answer
         when BACK

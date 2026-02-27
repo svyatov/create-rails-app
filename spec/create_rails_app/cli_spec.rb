@@ -542,6 +542,27 @@ RSpec.describe CreateRailsApp::CLI do
     expect(err.string).to include('Preset not found')
   end
 
+  it 'goes back to last wizard step on Ctrl+B at summary' do
+    store = instance_double(CreateRailsApp::Config::Store, last_used: {})
+    allow(store).to receive(:save_last_used)
+    allow(store).to receive(:save_preset)
+    runner = instance_double(CreateRailsApp::Runner)
+    allow(runner).to receive(:run!)
+
+    status = run_cli(
+      ['myapp', '--dry-run', '--rails-version', '8.1.2'],
+      store: store, runner: runner,
+      prompter: FakePrompter.new(
+        choices: [
+          CreateRailsApp::Wizard::BACK, # Ctrl+B at summary → re-enter wizard at last step
+          'create'                      # accept on second summary
+        ],
+        confirms: [false]
+      )
+    )
+    expect(status).to eq(0)
+  end
+
   it 'supports edit-again wizard loop' do
     store = instance_double(CreateRailsApp::Config::Store, last_used: {})
     allow(store).to receive(:save_last_used)
