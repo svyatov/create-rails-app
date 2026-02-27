@@ -31,7 +31,11 @@ module CreateRailsApp
         return true
       end
 
-      status = @system_runner.call(*command)
+      status = if defined?(Bundler)
+                 Bundler.with_unbundled_env { @system_runner.call(*command) }
+               else
+                 @system_runner.call(*command)
+               end
       return true if status.respond_to?(:success?) && status.success?
 
       code = status.respond_to?(:exitstatus) ? status.exitstatus : nil
