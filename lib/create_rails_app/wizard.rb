@@ -315,7 +315,8 @@ module CreateRailsApp
     # @return [String] the raw choice value, or {BACK}
     def choose_with_default_marker(question, key:, choices:, rails_default:, selected:)
       actual_selected = choices.include?(selected) ? selected : choices.first
-      rendered_pairs = choices.map do |choice|
+      ordered = choices.include?(rails_default) ? [rails_default] + (choices - [rails_default]) : choices
+      rendered_pairs = ordered.map do |choice|
         [render_choice_label(key, choice, rails_default: rails_default), choice]
       end
       rendered = rendered_pairs.map(&:first)
@@ -324,7 +325,7 @@ module CreateRailsApp
       return BACK if answer == BACK
 
       rendered_index = rendered.index(answer)
-      return choices[rendered_index] if rendered_index
+      return ordered[rendered_index] if rendered_index
 
       actual_selected
     end
