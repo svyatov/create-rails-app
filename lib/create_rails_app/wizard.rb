@@ -207,7 +207,9 @@ module CreateRailsApp
     def ask_for(key, index:, total:)
       definition = Options::Catalog.fetch(key)
       label = LABELS.fetch(key)
-      question = render_question(index: index, total: total, key: key, label: label)
+      skip_question = definition[:type] == :skip ||
+                      (definition[:type] == :enum && !@compatibility_entry.allowed_values(key))
+      question = render_question(index: index, total: total, key: key, label: label, skip: skip_question)
       case definition[:type]
       when :skip
         ask_skip(question, key)
@@ -230,12 +232,12 @@ module CreateRailsApp
     # @param key [Symbol]
     # @return [true, false, BACK]
     def ask_skip(question, key)
-      choices = %w[include skip]
+      choices = %w[no yes]
       current = @values[key]
-      selected = current == false ? 'skip' : 'include'
-      answer = choose_with_default_marker(question, key:, choices:, rails_default: 'include', selected:)
+      selected = current == false ? 'yes' : 'no'
+      answer = choose_with_default_marker(question, key:, choices:, rails_default: 'no', selected:)
       return BACK if answer == BACK
-      return false if answer == 'skip'
+      return false if answer == 'yes'
 
       true
     end
@@ -335,9 +337,13 @@ module CreateRailsApp
     # @param key [Symbol]
     # @param label [String]
     # @return [String]
-    def render_question(index:, total:, key:, label:)
+    def render_question(index:, total:, key:, label:, skip: false)
       step = format('%<current>02d/%<total>02d', current: index + 1, total: total)
-      "{{cyan:#{step}}} {{bold:#{label}}} - #{HELP_TEXT.fetch(key)}"
+      if skip
+        "{{cyan:#{step}}} {{bold:Skip #{label}?}} - #{HELP_TEXT.fetch(key)}"
+      else
+        "{{cyan:#{step}}} {{bold:#{label}}} - #{HELP_TEXT.fetch(key)}"
+      end
     end
 
     # @param key [Symbol]

@@ -45,9 +45,9 @@ RSpec.describe CreateRailsApp::Wizard do
     expect(result).not_to have_key(:api)
   end
 
-  it 'records skip false when user chooses skip' do
+  it 'records skip false when user chooses yes' do
     entry = build_entry(hotwire: nil, jbuilder: nil)
-    prompter = FakePrompter.new(choices: %w[skip include])
+    prompter = FakePrompter.new(choices: %w[yes no])
 
     result = described_class.new(compatibility_entry: entry, defaults: {}, prompter: prompter).run
 
@@ -86,11 +86,11 @@ RSpec.describe CreateRailsApp::Wizard do
     entry = build_entry(hotwire: nil, jbuilder: nil, docker: nil)
     prompter = FakePrompter.new(
       choices: [
-        'include',                              # hotwire = include
-        'skip',                                 # jbuilder = skip
+        'no',                                   # skip hotwire? no
+        'yes',                                  # skip jbuilder? yes
         CreateRailsApp::Wizard::BACK,           # go back to jbuilder
-        'include',                              # jbuilder = include
-        'include'                               # docker = include
+        'no',                                   # skip jbuilder? no
+        'no'                                    # skip docker? no
       ]
     )
 
@@ -112,7 +112,7 @@ RSpec.describe CreateRailsApp::Wizard do
 
   it 'does not offer "none" for database' do
     entry = build_entry(active_record: nil, database: %w[sqlite3 postgresql mysql trilogy])
-    prompter = FakePrompter.new(choices: %w[include sqlite3])
+    prompter = FakePrompter.new(choices: %w[no sqlite3])
 
     described_class.new(compatibility_entry: entry, defaults: {}, prompter: prompter).run
 
@@ -123,7 +123,7 @@ RSpec.describe CreateRailsApp::Wizard do
 
   it 'auto-skips database when active_record is false' do
     entry = build_entry(active_record: nil, database: %w[sqlite3 postgresql mysql trilogy])
-    prompter = FakePrompter.new(choices: %w[skip])
+    prompter = FakePrompter.new(choices: %w[yes])
 
     result = described_class.new(compatibility_entry: entry, defaults: {}, prompter: prompter).run
 
@@ -151,7 +151,7 @@ RSpec.describe CreateRailsApp::Wizard do
       active_record: nil, database: %w[sqlite3 postgresql],
       action_mailbox: nil, active_storage: nil, action_text: nil
     )
-    prompter = FakePrompter.new(choices: %w[skip])
+    prompter = FakePrompter.new(choices: %w[yes])
 
     result = described_class.new(compatibility_entry: entry, defaults: {}, prompter: prompter).run
 
@@ -265,14 +265,14 @@ RSpec.describe CreateRailsApp::Wizard do
     entry = build_entry(active_record: nil, database: %w[sqlite3 postgresql mysql trilogy], hotwire: nil)
     prompter = FakePrompter.new(
       choices: [
-        'include',                            # active_record = true
+        'no',                                 # skip active_record? no
         'postgresql',                         # database = postgresql
         CreateRailsApp::Wizard::BACK,         # back from hotwire → database
         CreateRailsApp::Wizard::BACK,         # back from database → active_record
-        'skip',                               # active_record = false (database auto-skipped)
+        'yes',                                # skip active_record? yes (database auto-skipped)
         CreateRailsApp::Wizard::BACK,         # back from hotwire → active_record (database skipped)
-        'include',                            # active_record = true (database restored from stash)
-        'include'                             # hotwire = include
+        'no',                                 # skip active_record? no (database restored from stash)
+        'no'                                  # skip hotwire? no
       ]
     )
 
@@ -296,16 +296,16 @@ RSpec.describe CreateRailsApp::Wizard do
     expect(ap_options.any? { |opt| opt.include?('sprockets') }).to be(true)
   end
 
-  it 'presents asset_pipeline as include/skip for Rails 8.0+' do
+  it 'presents asset_pipeline as yes/no skip for Rails 8.0+' do
     entry = build_entry(asset_pipeline: nil)
-    prompter = FakePrompter.new(choices: %w[skip])
+    prompter = FakePrompter.new(choices: %w[yes])
 
     result = described_class.new(compatibility_entry: entry, defaults: {}, prompter: prompter).run
 
     expect(result[:asset_pipeline]).to be(false)
     ap_options = prompter.seen_options.first
-    expect(ap_options.any? { |opt| opt.include?('include') }).to be(true)
-    expect(ap_options.any? { |opt| opt.include?('skip') }).to be(true)
+    expect(ap_options.any? { |opt| opt.include?('no') }).to be(true)
+    expect(ap_options.any? { |opt| opt.include?('yes') }).to be(true)
   end
 
   it 'presents bundler_audit step for Rails 8.1' do
@@ -340,9 +340,9 @@ RSpec.describe CreateRailsApp::Wizard do
         'no',                                   # api = no
         'importmap',                            # javascript
         'tailwind',                             # css
-        'include',                              # hotwire
-        'include',                              # jbuilder
-        'include',                              # action_text
+        'no',                                   # skip hotwire? no
+        'no',                                   # skip jbuilder? no
+        'no',                                   # skip action_text? no
         'minitest'                              # test
       ]
     )
