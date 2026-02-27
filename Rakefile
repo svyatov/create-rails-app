@@ -21,7 +21,7 @@ task :fetch_otp do
   abort 'OTP fetch requires the 1Password CLI (op). Install it or set GEM_HOST_OTP_CODE manually.' \
     unless system('op', '--version', out: File::NULL, err: File::NULL)
 
-  ENV['GEM_HOST_OTP_CODE'] = `op item get "RubyGems" --otp`.strip
+  ENV['GEM_HOST_OTP_CODE'] = `op item get "RubyGems" --account my --otp`.strip
 end
 
 task default: %i[spec rubocop]
