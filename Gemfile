@@ -12,4 +12,4 @@ gem 'rspec', '~> 3.13.2'
 gem 'simplecov', require: false
 gem 'simplecov_json_formatter', require: false
 
-gem 'rubocop', '~> 1.85.0'
+gem 'rubocop', '~> 1.86.0'
